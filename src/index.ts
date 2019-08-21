@@ -1,5 +1,7 @@
 
 import { Personagem } from './Personagem'
+import { Animation } from './Animation'
+import { Background } from './Background'
 
 const canvas: HTMLCanvasElement = (document.getElementById('container') as HTMLCanvasElement);
 const context: CanvasRenderingContext2D = canvas.getContext('2d');
@@ -46,15 +48,16 @@ const attackFn = (number: number, x: number, y: number) => {
     const attackCanvasCtx = attackCanvas.getContext('2d');
     attackCanvasCtx.clearRect(0, 0, 45, 45);
 
-    // attackCanvasCtx.translate(22, 22);
-    // attackCanvasCtx.rotate(45 * Math.PI / 180);
+    attackCanvasCtx.translate(22, 22);
+    attackCanvasCtx.rotate(-40 * Math.PI / 180);
     // attackCanvasCtx.translate(0, 0);
 
     attackCanvasCtx.drawImage(attack, xy[number][0], xy[number][1], 150, 150, 0, 0, 45, 45)
 
     bg();
+    sinDragon.render()
+
     context.drawImage(attackCanvas, x, y);
-    // sinDragon.desenhar()
 
     setTimeout(() => {
         ++number;
@@ -65,50 +68,45 @@ const attackFn = (number: number, x: number, y: number) => {
 
 const iniciar = () => {
 
-    const image = new Image();
-    image.src = './public/bg.png';
-
-    offscreenCanvas = document.createElement('canvas');
-    offscreenCanvas.width = 45;
-    offscreenCanvas.height = 45;
-
-    const offscreenContext = offscreenCanvas.getContext('2d');
-    offscreenContext.drawImage(image, 0, 290, 46, 46, 0, 0, 45, 45)
-
-    // const pattern = context.createPattern(offscreenCanvas, 'repeat');
-    // context.fillStyle = pattern;
-    // context.fillRect(0, 0, 1000, 1000);
-
     sinDragon = new Personagem(context, './public/actor.png', 10, 4, 3, 49, 48);
     sinDragon.x = 200;
     sinDragon.y = 200;
-    desenha(0, 0)
-}
 
-const bg = () => {
-    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-    const pattern = context.createPattern(offscreenCanvas, 'repeat');
-    context.fillStyle = pattern;
-    context.fillRect(0, 0, 600, 600);
-}
 
+    const bg = new Background(context);
+
+    const image = new Image();
+    image.src = './public/bg.png';
+    offscreenCanvas = document.createElement('canvas');
+    offscreenCanvas.width = 45;
+    offscreenCanvas.height = 45;
+    const offscreenContext = offscreenCanvas.getContext('2d');
+    offscreenContext.drawImage(image, 0, 290, 46, 46, 0, 0, 45, 45)
+    bg.repeat(offscreenContext);
+
+
+    const animation = new Animation(context);
+    animation.newSprite(sinDragon);
+    animation.newSprite(bg);
+
+    animation.render();
+
+}
 
 const desenha = (x: number, y: number) => {
- 
-    bg();
-    sinDragon.proximoQuadro()
-    sinDragon.desenhar()
+    sinDragon.nextFrame()
+    sinDragon.render()
 }
 
 
 const elemento = document;
-elemento.addEventListener('keydown', (evento: KeyboardEvent) => {
+let ultimaPosicao: any = false;
 
-    let ultimaPosicao: any = false;
+elemento.addEventListener('keydown', (evento: KeyboardEvent) => {
 
 
     if (evento.keyCode == SETA_BAIXO) {
-        ultimaPosicao == SETA_BAIXO;
+        ultimaPosicao = SETA_BAIXO;
         sinDragon.linha = 0;
         // sinDragon.coluna = 0;
         sinDragon.y += sinDragon.velocidade;  // E aqui é sinal de menos!
@@ -117,7 +115,7 @@ elemento.addEventListener('keydown', (evento: KeyboardEvent) => {
 
 
     if (evento.keyCode == SETA_CIMA) {
-        ultimaPosicao == SETA_CIMA;
+        ultimaPosicao = SETA_CIMA;
 
         sinDragon.linha = 3;
         // sinDragon.coluna = 0;
@@ -127,7 +125,7 @@ elemento.addEventListener('keydown', (evento: KeyboardEvent) => {
     }
 
     if (evento.keyCode == SETA_DIREITA) {
-        ultimaPosicao == SETA_DIREITA;
+        ultimaPosicao = SETA_DIREITA;
 
         sinDragon.linha = 2;
         // sinDragon.coluna = 0;
@@ -137,7 +135,7 @@ elemento.addEventListener('keydown', (evento: KeyboardEvent) => {
     }
 
     if (evento.keyCode == SETA_ESQUERDA) {
-        ultimaPosicao == SETA_ESQUERDA;
+        ultimaPosicao = SETA_ESQUERDA;
 
         sinDragon.linha = 1;
         // sinDragon.coluna = 0;
@@ -148,7 +146,12 @@ elemento.addEventListener('keydown', (evento: KeyboardEvent) => {
 
 
     if (evento.keyCode == ESPACO) {
-        attackFn(0, sinDragon.x -10, sinDragon.y +15);
+
+        if (ultimaPosicao == SETA_CIMA) {
+            attackFn(0, sinDragon.x - 10, sinDragon.y - 20);
+        } else {
+            attackFn(0, sinDragon.x - 10, sinDragon.y + 15);
+        }
     }
 
 

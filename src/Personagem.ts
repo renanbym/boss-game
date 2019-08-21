@@ -42,10 +42,9 @@ export class Personagem {
         this.largura = largura;
         this.altura = altura;
 
-        this.desenhar();
     }
 
-    proximoQuadro() {
+    nextFrame() {
         let agora = new Date().getTime();
 
         // Se ainda não tem último tempo medido
@@ -62,16 +61,9 @@ export class Personagem {
 
         // Guardar hora da última mudança
         this.ultimoTempo = agora;
-
-        this.desenhar();
     }
 
-
-    desenhar2() {
-        this.context.drawImage(this.imagem, this.largura * this.coluna, this.altura * this.linha, this.largura, this.altura, (this.context.canvas.width / 2) -  this.largura, (this.context.canvas.height / 2) -  this.altura, this.largura, this.altura);
-    }
-
-    desenhar() {
+    render() {
         this.context.drawImage(this.imagem, this.largura * this.coluna, this.altura * this.linha, this.largura, this.altura, this.x, this.y, this.largura, this.altura);
     }
 

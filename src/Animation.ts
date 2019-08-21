@@ -1,6 +1,6 @@
 import { Personagem } from './Personagem';
 
-export class Animacao {
+export class Animation {
 
     context: CanvasRenderingContext2D;
     sprites: Array<Personagem> = [];
@@ -9,8 +9,17 @@ export class Animacao {
         this.context = context;
     }
 
-    novoSprite(sprite: Personagem) {
+    newSprite(sprite: any) {
         this.sprites.push(sprite);
+    }
+
+    render() {
+        this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
+
+        for (const sprite of this.sprites) {
+            sprite.render();
+        }
+
     }
 
 }

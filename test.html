@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base href="./dist/">
+    <meta charset="utf-8">
+    <title>Sin Dragon</title>
+
+    <style>
+        body {
+            background: #262626;
+        }
+
+        canvas {
+            border: solid 1px #ccc;
+            display: block;
+            margin: 5rem auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas width="500" height="500" id="container"></canvas>
+
+
+    <script>
+
+        const getRandomIntInclusive = (min, max) => {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        const canvas = document.getElementById('container');
+        const context = canvas.getContext('2d');
+
+        const GRID = [0, 0, 0, 0, 0, 0]
+
+        const SETA_ESQUERDA = 37;
+        const SETA_CIMA = 38;
+        const SETA_DIREITA = 39;
+        const SETA_BAIXO = 40;
+        const ESPACO = 32;
+
+        const VELOCIDADE = 20;
+        const LARGURA = 500;
+        const ALTURA = 500;
+
+        const sinDragon = {
+            ultimaPosicao: false,
+            life: 100,
+            live: true,
+            x: 100,
+            y: 40,
+            w: 20,
+            h: 20
+        }
+
+        const sinVilao = {
+            ultimaPosicao: false,
+            life: 100,
+            live: true,
+            x: 220,
+            y: 220,
+            w: 20,
+            h: 20
+        }
+
+        const Personagem = context.createImageData(sinDragon.w, sinDragon.h);
+        for (let i = 0; i < Personagem.data.length; i += 4) {
+            Personagem.data[i + 0] = 255;
+            Personagem.data[i + 1] = 255;
+            Personagem.data[i + 2] = 255;
+            Personagem.data[i + 3] = 10;
+        }
+        context.putImageData(Personagem, sinDragon.x, sinDragon.y);
+
+
+        const Vilao = context.createImageData(sinVilao.w, sinVilao.h);
+        for (let i = 0; i < Vilao.data.length; i += 4) {
+            Vilao.data[i + 0] = 255;
+            Vilao.data[i + 1] = 255;
+            Vilao.data[i + 2] = 255;
+            Vilao.data[i + 3] = 50;
+        }
+        context.putImageData(Vilao, sinVilao.x, sinVilao.y);
+
+        // setInterval(() => {
+        //     sinVilao.x = getRandomIntInclusive(0, 480)
+        //     sinVilao.y = getRandomIntInclusive(0, 480)
+        //     render()
+        // }, 5000)
+
+        const animationExplode = (x, y) => {
+            const canvasExplode = document.createElement('canvas');
+            const contextExplode = canvasExplode.getContext('2d');
+
+            canvasExplode.width = sinDragon.w
+            canvasExplode.height = sinDragon.h
+
+            contextExplode.fillStyle = 'green';
+            contextExplode.fillRect(0, 0, sinDragon.w, sinDragon.h);
+            context.drawImage(canvasExplode, x, y);
+
+            setTimeout(() => {
+                contextExplode.fillStyle = 'blue';
+                contextExplode.fillRect(0, 0, sinDragon.w, sinDragon.h);
+                context.drawImage(canvasExplode, x, y);
+            }, 100)
+
+            setTimeout(() => {
+                contextExplode.fillStyle = 'yellow';
+                contextExplode.fillRect(0, 0, sinDragon.w, sinDragon.h);
+                context.drawImage(canvasExplode, x, y);
+
+                render({ explode: false });
+
+            }, 300)
+
+        }
+
+
+        const matou = (err, res) => {
+            if (!err && res) {
+                res.live = false;
+                console.log(res)
+            }
+
+        }
+
+        const explode = () => {
+
+            let x = 0;
+            let y = 0;
+
+            if (sinDragon.ultimaPosicao == SETA_BAIXO) {
+                x = sinDragon.x
+                y = sinDragon.y + 20
+                animationExplode(x, y)
+                coalisaoViloes(x, y, matou)
+            }
+
+            if (sinDragon.ultimaPosicao == SETA_CIMA) {
+                x = sinDragon.x
+                y = sinDragon.y - 20
+                animationExplode(x, y)
+                coalisaoViloes(x, y, matou)
+            }
+
+
+            if (sinDragon.ultimaPosicao == SETA_DIREITA) {
+                x = sinDragon.x + 20
+                y = sinDragon.y
+                animationExplode(x, y)
+                coalisaoViloes(x, y, matou)
+
+            }
+
+            if (sinDragon.ultimaPosicao == SETA_ESQUERDA) {
+                x = sinDragon.x - 20
+                y = sinDragon.y
+                animationExplode(x, y)
+                coalisaoViloes(x, y, matou)
+            }
+
+        }
+
+        const coalisaoViloes = (nextX, nextY, callback) => {
+            const viloes = [sinVilao];
+
+            const find = viloes.find(vilao => vilao.live && vilao.x == nextX && vilao.y == nextY);
+
+            if (find) {
+                if (callback) callback(false, find)
+                return false;
+            }
+
+            if (callback) callback(true, find)
+            return true;
+        }
+
+        const render = () => {
+            context.fillStyle = '#262626';
+            context.fillRect(0, 0, LARGURA, ALTURA);
+            if (sinDragon.live) context.putImageData(Personagem, sinDragon.x, sinDragon.y);
+            if (sinVilao.live) context.putImageData(Vilao, sinVilao.x, sinVilao.y);
+        }
+
+        document.addEventListener('keydown', (evento) => {
+
+            if (evento.keyCode == SETA_BAIXO) {
+                if (sinDragon.y <= (ALTURA - (VELOCIDADE + sinDragon.h))) {
+                    const next = sinDragon.y + VELOCIDADE;
+                    if (coalisaoViloes(sinDragon.x, next)) sinDragon.y = next;
+                    sinDragon.ultimaPosicao = SETA_BAIXO;
+                    render();
+                }
+            }
+
+
+            if (evento.keyCode == SETA_CIMA) {
+                if (sinDragon.y >= VELOCIDADE) {
+                    const next = sinDragon.y - VELOCIDADE;
+                    if (coalisaoViloes(sinDragon.x, next)) sinDragon.y = next;
+                    sinDragon.ultimaPosicao = SETA_CIMA;
+                    render();
+                }
+            }
+
+            if (evento.keyCode == SETA_DIREITA) {
+                if (sinDragon.x <= (LARGURA - (VELOCIDADE + sinDragon.w))) {
+                    const next = sinDragon.x + VELOCIDADE;
+                    if (coalisaoViloes(next, sinDragon.y)) sinDragon.x = next;
+                    sinDragon.ultimaPosicao = SETA_DIREITA;
+                    render();
+                }
+            }
+
+            if (evento.keyCode == SETA_ESQUERDA) {
+                if (sinDragon.x >= VELOCIDADE) {
+                    const next = sinDragon.x - VELOCIDADE;
+                    if (coalisaoViloes(next, sinDragon.y)) sinDragon.x = next;
+                    sinDragon.ultimaPosicao = SETA_ESQUERDA;
+                    render();
+                }
+            }
+
+
+            if (evento.keyCode == ESPACO) {
+                explode();
+            }
+
+
+        });
+
+
+    </script>
+
+</body>
+
+</html>
