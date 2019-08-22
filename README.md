@@ -5,6 +5,7 @@
 * [x] Explosão
 * [x] Background
 * [x] Vilão correr atras do personagem
+* [x] Colisão Paredes
 * [ ] Colisão Personagem
 * [ ] Colisão Vilões
 

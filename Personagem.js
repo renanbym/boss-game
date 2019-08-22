@@ -1,5 +1,11 @@
 class Personagem {
 
+    SETA_ESQUERDA = 37;
+    SETA_CIMA = 38;
+    SETA_DIREITA = 39;
+    SETA_BAIXO = 40;
+    ESPACO = 32;
+
     x
     y
     width
@@ -10,9 +16,9 @@ class Personagem {
     column = 0
     velocity
     lastTime = new Date().getTime();
+    intervalo = 0
 
     constructor() {
-
         this.params(arguments[0])
     }
 
