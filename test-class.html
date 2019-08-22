@@ -41,6 +41,7 @@
             y: 1 * PIXEL,
             width: 50,
             height: 50,
+            velocity: PIXEL,
             context,
             image
         }
@@ -93,8 +94,62 @@
         });
 
         const render = () => {
+            context.clearRect(0, 0, canvas.width, canvas.height);
             context.drawImage(canvasBG, 0, 0)
             Gunslinger.render()
+        }
+
+        Teclado.apply(Gunslinger);
+
+        function Teclado() {
+            this.SETA_ESQUERDA = 37;
+            this.SETA_CIMA = 38;
+            this.SETA_DIREITA = 39;
+            this.SETA_BAIXO = 40;
+            this.ESPACO = 32;
+
+            document.addEventListener('keydown', (event) => {
+              
+                if (event.keyCode == this.SETA_BAIXO) {
+                    this.lastPosition = this.SETA_BAIXO;
+                    this.y += this.velocity;
+
+                    this.nextFrame();
+                    this.render()
+                    render();
+                }
+
+                if (event.keyCode == this.SETA_CIMA) {
+                    this.lastPosition = this.SETA_CIMA;
+                    this.y -= this.velocity;
+
+                    this.nextFrame();
+                    this.render()
+                    render();
+                }
+
+                if (event.keyCode == this.SETA_DIREITA) {
+                    this.lastPosition = this.SETA_DIREITA;
+                    this.x += this.velocity;
+
+                    this.nextFrame();
+                    this.render()
+                    render();
+                }
+
+                if (event.keyCode == this.SETA_ESQUERDA) {
+                    this.lastPosition = this.SETA_ESQUERDA;
+                    this.x -= this.velocity;
+
+                    this.nextFrame();
+                    this.render()
+                    render();
+                }
+
+                if (event.keyCode == this.ESPACO) {
+
+                }
+            })
         }
 
 
