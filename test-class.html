@@ -20,6 +20,7 @@
 
     <script src="grid.js"></script>
     <script src="findPath.js"></script>
+    <script src="Background.js"></script>
     <script src="Personagem.js"></script>
     <script src="Vilao.js"></script>
 </head>
@@ -45,6 +46,7 @@
             velocity: PIXEL,
             context,
             image,
+            PIXEL
         })
 
         const image1 = new Image()
@@ -58,116 +60,28 @@
             velocity: PIXEL,
             context,
             image: image1,
+            walkingTo: Gunslinger,
+            villain: false,
+            PIXEL
         })
 
-
-        const loadImg = function loadImg(src) {
-            'use strict';
-            const paths = Array.isArray(src) ? src : [src];
-            const promise = [];
-            paths.forEach((path) => {
-                promise.push(new Promise((resolve, reject) => {
-                    const img = new Image();
-                    img.onload = () => resolve({ path, img, status: 'ok' });
-                    img.onerror = () => resolve({ path, img, status: 'error' });
-                    img.src = path;
-                }));
-            });
-            return Promise.all(promise);
-        };
-
-        const canvasBG = document.createElement('canvas')
-        const contextBG = canvasBG.getContext('2d')
-        canvasBG.width = canvas.width
-        canvasBG.height = canvas.height
-
-        const mapmap = [];
-
-        loadImg([
-            'img/bgs.png',
-            'img/walls.png'
-        ]).then(function (spritesheet) {
-          
-            for (let eixoY = 0; eixoY < MAP.length; eixoY++) {
-                for (let eixoX = 0; eixoX < MAP[0].length; eixoX++) {
-
-                    const [gridY, gridX, type] = [eixoY * PIXEL, eixoX * PIXEL, MAP[eixoY][eixoX]]
-
-                    contextBG.drawImage(spritesheet[0].img, 4 * 48, 6 * 48, 48, 48, gridX, gridY, PIXEL, PIXEL)
-                    
-                    if (Math.random() > 0.85) contextBG.drawImage(spritesheet[0].img, 4 * 48, 13 * 48, 48, 48, gridX, gridY, PIXEL, PIXEL)
-
-                    if (type == '1') {
-                        contextBG.drawImage(spritesheet[1].img, 7 * 48, 12 * 48, 48, 48, gridX, gridY, PIXEL, PIXEL)
-                    }
-
-                }
-            }
-            render();
-
-        });
+        const BG = new Background({
+            canvas,
+            context,
+            MAP,
+            PIXEL,
+            images: ['img/bgs.png', 'img/walls.png']
+        })
 
         const render = () => {
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            context.drawImage(canvasBG, 0, 0)
+            BG.render()
             Gunslinger.render()
             Vilao.render()
         }
 
-        Teclado.apply(Gunslinger);
+        window.onload = render;
 
-
-        let next = true
-        const nextStep = () => {
-            this.SETA_ESQUERDA = 37;
-            this.SETA_CIMA = 38;
-            this.SETA_DIREITA = 39;
-            this.SETA_BAIXO = 40;
-            this.ESPACO = 32;
-
-            const pathStart = [Vilao.x / PIXEL, Vilao.y / PIXEL]
-            const pathEnd = [Gunslinger.x / PIXEL, Gunslinger.y / PIXEL]
-      
-            const currentPath = findPath(WORLD_INVERT, pathStart, pathEnd)
-
-            if (currentPath[1]) {
-
-                if (currentPath[1][1] != pathStart[1]) {
-                    if (pathStart[1] > currentPath[1][1]) {
-                        Vilao.lastPosition = this.SETA_CIMA;
-                    }
-
-                    if (currentPath[1][1] > pathStart[1]) {
-                        Vilao.lastPosition = this.SETA_BAIXO;
-                    }
-                }
-
-                if (currentPath[1][0] != pathStart[0]) {
-
-                    if (pathStart[0] > currentPath[1][0]) {
-                        Vilao.lastPosition = this.SETA_ESQUERDA;
-                    }
-
-                    if (currentPath[1][0] > pathStart[0]) {
-                        Vilao.lastPosition = this.SETA_DIREITA;
-                    }
-                }
-
-                Vilao.x = currentPath[1][0] * PIXEL
-                Vilao.y = currentPath[1][1] * PIXEL
-
-                Vilao.nextFrame()
-                Vilao.render()
-                render()
-            } else {
-                Gunslinger.live = false
-                next = false
-            }
-
-            if (next) setTimeout(nextStep, 500)
-        }
-        setTimeout(nextStep, 500)
-
+        Teclado.call(Gunslinger);
 
         function Teclado() {
             this.SETA_ESQUERDA = 37;
@@ -178,7 +92,6 @@
 
             this.checkWall = (nextX, nextY) => {
                 const find = WALLS.find(wall => wall[0] == nextX / PIXEL && wall[1] == nextY / PIXEL)
-                console.log(find)
                 if (find) return false
                 return true
             }

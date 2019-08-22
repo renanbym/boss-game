@@ -11,7 +11,7 @@
 
 ### Clean
 
-* [ ] Class de Personagens
+* [x] Class de Personagens
 * [ ] Class de Background
 * [ ] Class de Spreadsheet
 * [ ] Class de Teclado
