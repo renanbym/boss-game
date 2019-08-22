@@ -27,7 +27,7 @@ class Personagem {
         if (this.villain && this.walkingTo) this.walking();
     }
 
-    params = ({ x, y, width, height, context, image, velocity, villain, walkingTo, PIXEL }) => {
+    params = ({ x, y, width, height, context, image, velocity, villain, walkingTo, PIXEL, WORLD }) => {
         this.x = x
         this.y = y
         this.width = width
@@ -37,6 +37,7 @@ class Personagem {
         this.villain = villain
         this.walkingTo = walkingTo
         this.PIXEL = PIXEL
+        this.WORLD = WORLD
 
         this.image = new Image()
         this.image.src = image
@@ -86,7 +87,7 @@ class Personagem {
         const pathStart = [this.x / this.PIXEL, this.y / this.PIXEL]
         const pathEnd = [this.walkingTo.x / this.PIXEL, this.walkingTo.y / this.PIXEL]
 
-        const currentPath = findPath(WORLD_INVERT, pathStart, pathEnd)
+        const currentPath = findPath(this.WORLD, pathStart, pathEnd)
 
         if (currentPath[1]) {
 
@@ -115,6 +116,7 @@ class Personagem {
             this.y = currentPath[1][1] * this.PIXEL
 
             this.nextFrame()
+            this.render()
 
             setTimeout(() => {
                 this.walking.call(this)

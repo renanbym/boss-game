@@ -2,28 +2,58 @@
 <html>
 
 <head>
-    <base href="./dist/">
     <meta charset="utf-8">
     <title>Sin Dragon</title>
 
     <style>
-        body{
-            background: #4d4d4d;
+        body {
+            background: #262626;
+            overflow: hidden;
         }
-        canvas{
-            border: solid 1px #ccc;
+
+        canvas {
+            border: solid 0.5px rgb(33, 33, 33);
             display: block;
-            margin: 5rem auto;
-            background: #4d4d4d;
+            margin: 0 auto;
         }
     </style>
+
+    <script src="grid.js"></script>
+    <script src="findPath.js"></script>
+    <script src="Teclado.js"></script>
+    <script src="Background.js"></script>
+    <script src="Personagem.js"></script>
+    <script src="Vilao.js"></script>
 </head>
 
 <body>
 
-    <canvas width="500" height="500" id="container"></canvas>
-    <script src="./bundle.js"></script>
-    
+    <canvas width="1000" height="1000" id="container"></canvas>
+
+    <script>
+        const canvas = document.getElementById('container')
+        const context = canvas.getContext('2d')
+
+        const PIXEL = 40;
+
+        const BG = new Background({ canvas, context, MAP, PIXEL, images: ['img/bgs.png', 'img/walls.png'] })
+
+        const Gunslinger = new Personagem({ x: 0, y: 1 * PIXEL, width: 49, height: 48, velocity: PIXEL, context, image: 'img/actor.png', PIXEL })
+
+        const Vilao = new Personagem({ x: 2 * PIXEL, y: 15 * PIXEL, width: 49, height: 48, WORLD: WORLD_INVERT, velocity: PIXEL, context, image: 'img/Villager1.png', walkingTo: Gunslinger, villain: true, PIXEL })
+
+        const render = () => {
+            BG.render()
+            Gunslinger.render()
+            Vilao.render()
+        }
+
+        Teclado.call(Gunslinger, PIXEL, WALLS, render);
+
+        window.onload = render;
+
+    </script>
+
 </body>
 
 </html>

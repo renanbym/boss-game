@@ -1,4 +1,4 @@
-function Teclado(PIXEL, WALLS) {
+function Teclado(PIXEL, WALLS, FN) {
     this.SETA_ESQUERDA = 37;
     this.SETA_CIMA = 38;
     this.SETA_DIREITA = 39;
@@ -6,6 +6,7 @@ function Teclado(PIXEL, WALLS) {
     this.ESPACO = 32;
     this.PIXEL = PIXEL;
     this.WALLS = WALLS;
+    this.FN = FN;
 
     this.checkWall = (nextX, nextY) => {
         const find = this.WALLS.find(wall => wall[0] == nextX / this.PIXEL && wall[1] == nextY / this.PIXEL)
@@ -24,7 +25,7 @@ function Teclado(PIXEL, WALLS) {
 
                 this.nextFrame();
                 this.render()
-                render();
+                this.FN()
             }
         }
 
@@ -37,7 +38,8 @@ function Teclado(PIXEL, WALLS) {
 
                 this.nextFrame();
                 this.render()
-                render();
+                this.FN()
+
             }
         }
 
@@ -49,7 +51,8 @@ function Teclado(PIXEL, WALLS) {
 
                 this.nextFrame();
                 this.render()
-                render();
+                this.FN()
+
             }
         }
 
@@ -61,7 +64,8 @@ function Teclado(PIXEL, WALLS) {
 
                 this.nextFrame();
                 this.render()
-                render();
+                this.FN()
+
             }
         }
 
