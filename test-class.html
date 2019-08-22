@@ -39,11 +39,11 @@
         const paramsGunslinger = {
             x: 1 * PIXEL,
             y: 1 * PIXEL,
-            width: 50,
-            height: 50,
+            width: 49,
+            height: 48,
             velocity: PIXEL,
             context,
-            image
+            image,
         }
 
         const Gunslinger = new Personagem(paramsGunslinger)
@@ -101,6 +101,17 @@
 
         Teclado.apply(Gunslinger);
 
+
+        function isCollide(a, b) {
+            console.log(a, b)
+            return !(
+                ((a.y + a.height) < (b.y)) ||
+                (a.y > (b.y + b.height)) ||
+                ((a.x + a.width) < b.x) ||
+                (a.x > (b.x + b.width))
+            );
+        }
+
         function Teclado() {
             this.SETA_ESQUERDA = 37;
             this.SETA_CIMA = 38;
@@ -108,42 +119,62 @@
             this.SETA_BAIXO = 40;
             this.ESPACO = 32;
 
-            document.addEventListener('keydown', (event) => {
-              
-                if (event.keyCode == this.SETA_BAIXO) {
-                    this.lastPosition = this.SETA_BAIXO;
-                    this.y += this.velocity;
+            this.checkWall = (nextX, nextY) => {
+                const find = WALLS.find(wall => wall[0] == nextX / PIXEL && wall[1] == nextY/ PIXEL)
+                if (find) return false
+                return true
+            }
 
-                    this.nextFrame();
-                    this.render()
-                    render();
+            document.addEventListener('keydown', (event) => {
+
+                if (event.keyCode == this.SETA_BAIXO) {
+
+                    const next = this.y + this.velocity
+                    if (this.checkWall(this.x, next)) {
+                        this.lastPosition = this.SETA_BAIXO;
+                        this.y = next > (canvas.height - this.height) ? (canvas.height - this.height) : next;
+
+                        this.nextFrame();
+                        this.render()
+                        render();
+                    }
                 }
 
                 if (event.keyCode == this.SETA_CIMA) {
-                    this.lastPosition = this.SETA_CIMA;
-                    this.y -= this.velocity;
 
-                    this.nextFrame();
-                    this.render()
-                    render();
+                    const next = this.y - this.velocity
+                    if (this.checkWall(this.x, next)) {
+                        this.lastPosition = this.SETA_CIMA;
+                        this.y = next <= 0 ? 0 : next;
+
+                        this.nextFrame();
+                        this.render()
+                        render();
+                    }
                 }
 
                 if (event.keyCode == this.SETA_DIREITA) {
-                    this.lastPosition = this.SETA_DIREITA;
-                    this.x += this.velocity;
+                    const next = this.x + this.velocity
+                    if (this.checkWall(next, this.y)) {
+                        this.lastPosition = this.SETA_DIREITA;
+                        this.x = next > (canvas.height - this.width) ? (canvas.width - this.width) : next;
 
-                    this.nextFrame();
-                    this.render()
-                    render();
+                        this.nextFrame();
+                        this.render()
+                        render();
+                    }
                 }
 
                 if (event.keyCode == this.SETA_ESQUERDA) {
-                    this.lastPosition = this.SETA_ESQUERDA;
-                    this.x -= this.velocity;
+                    const next = this.x - this.velocity
+                    if (this.checkWall(next, this.y)) {
+                        this.lastPosition = this.SETA_ESQUERDA;
+                        this.x = next <= 0 ? 0 : next;
 
-                    this.nextFrame();
-                    this.render()
-                    render();
+                        this.nextFrame();
+                        this.render()
+                        render();
+                    }
                 }
 
                 if (event.keyCode == this.ESPACO) {
