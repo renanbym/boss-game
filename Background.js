@@ -38,8 +38,6 @@ class Background {
                 }
             }
 
-            this.render();
-
         });
     }
 

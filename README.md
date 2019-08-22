@@ -12,14 +12,22 @@
 ### Clean
 
 * [x] Class de Personagens
-* [ ] Class de Background
+* [x] Class de Background
 * [ ] Class de Spreadsheet
-* [ ] Class de Teclado
+* [x] Class de Teclado
 
 ### Boss
 
-* [ ] 1 - A cada 30 segundos ele cresce
+* [ ] 1 - A cada 10 segundos ele anda mais rapido
 * [ ] 2 - 1 + Some e aparece em lugares diferentes
+* [ ] 3 - 2 + Atravessa parede
 
 ### Mapas
+* [ ] 1
+* [ ] 2
+* [ ] 3
 
+
+### V1
+
+[ ] Clean code

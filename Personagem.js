@@ -33,11 +33,13 @@ class Personagem {
         this.width = width
         this.height = height
         this.context = context
-        this.image = image
         this.velocity = velocity
         this.villain = villain
         this.walkingTo = walkingTo
         this.PIXEL = PIXEL
+
+        this.image = new Image()
+        this.image.src = image
     }
 
     nextFrame = () => {
@@ -113,7 +115,7 @@ class Personagem {
             this.y = currentPath[1][1] * this.PIXEL
 
             this.nextFrame()
-     
+
             setTimeout(() => {
                 this.walking.call(this)
             }, this.velocity * 10)

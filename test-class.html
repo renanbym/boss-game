@@ -20,6 +20,7 @@
 
     <script src="grid.js"></script>
     <script src="findPath.js"></script>
+    <script src="Teclado.js"></script>
     <script src="Background.js"></script>
     <script src="Personagem.js"></script>
     <script src="Vilao.js"></script>
@@ -35,43 +36,11 @@
 
         const PIXEL = 40;
 
-        const image = new Image()
-        image.src = 'img/actor.png'
+        const BG = new Background({ canvas, context, MAP, PIXEL, images: ['img/bgs.png', 'img/walls.png'] })
 
-        const Gunslinger = new Personagem({
-            x: 0,
-            y: 1 * PIXEL,
-            width: 49,
-            height: 48,
-            velocity: PIXEL,
-            context,
-            image,
-            PIXEL
-        })
+        const Gunslinger = new Personagem({ x: 0, y: 1 * PIXEL, width: 49, height: 48, velocity: PIXEL, context, image: 'img/actor.png', PIXEL })
 
-        const image1 = new Image()
-        image1.src = 'img/Villager1.png'
-
-        const Vilao = new Personagem({
-            x: 2 * PIXEL,
-            y: 15 * PIXEL,
-            width: 49,
-            height: 48,
-            velocity: PIXEL,
-            context,
-            image: image1,
-            walkingTo: Gunslinger,
-            villain: false,
-            PIXEL
-        })
-
-        const BG = new Background({
-            canvas,
-            context,
-            MAP,
-            PIXEL,
-            images: ['img/bgs.png', 'img/walls.png']
-        })
+        const Vilao = new Personagem({ x: 2 * PIXEL, y: 15 * PIXEL, width: 49, height: 48, velocity: PIXEL, context, image: 'img/Villager1.png', walkingTo: Gunslinger, villain: false, PIXEL })
 
         const render = () => {
             BG.render()
@@ -79,80 +48,9 @@
             Vilao.render()
         }
 
+        Teclado.call(Gunslinger, PIXEL, WALLS);
+
         window.onload = render;
-
-        Teclado.call(Gunslinger);
-
-        function Teclado() {
-            this.SETA_ESQUERDA = 37;
-            this.SETA_CIMA = 38;
-            this.SETA_DIREITA = 39;
-            this.SETA_BAIXO = 40;
-            this.ESPACO = 32;
-
-            this.checkWall = (nextX, nextY) => {
-                const find = WALLS.find(wall => wall[0] == nextX / PIXEL && wall[1] == nextY / PIXEL)
-                if (find) return false
-                return true
-            }
-
-            document.addEventListener('keydown', (event) => {
-
-                if (event.keyCode == this.SETA_BAIXO) {
-
-                    const next = this.y + this.velocity
-                    if (this.checkWall(this.x, next)) {
-                        this.lastPosition = this.SETA_BAIXO;
-                        this.y = next > (canvas.height - this.height) ? (canvas.height - this.height) : next;
-
-                        this.nextFrame();
-                        this.render()
-                        render();
-                    }
-                }
-
-                if (event.keyCode == this.SETA_CIMA) {
-
-                    const next = this.y - this.velocity
-                    if (this.checkWall(this.x, next)) {
-                        this.lastPosition = this.SETA_CIMA;
-                        this.y = next <= 0 ? 0 : next;
-
-                        this.nextFrame();
-                        this.render()
-                        render();
-                    }
-                }
-
-                if (event.keyCode == this.SETA_DIREITA) {
-                    const next = this.x + this.velocity
-                    if (this.checkWall(next, this.y)) {
-                        this.lastPosition = this.SETA_DIREITA;
-                        this.x = next > (canvas.height - this.width) ? (canvas.width - this.width) : next;
-
-                        this.nextFrame();
-                        this.render()
-                        render();
-                    }
-                }
-
-                if (event.keyCode == this.SETA_ESQUERDA) {
-                    const next = this.x - this.velocity
-                    if (this.checkWall(next, this.y)) {
-                        this.lastPosition = this.SETA_ESQUERDA;
-                        this.x = next <= 0 ? 0 : next;
-
-                        this.nextFrame();
-                        this.render()
-                        render();
-                    }
-                }
-
-                if (event.keyCode == this.ESPACO) {
-
-                }
-            })
-        }
 
 
     </script>
