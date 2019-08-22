@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Sin Dragon</title>
+
+    <style>
+        body {
+            background: #262626;
+            overflow: hidden;
+        }
+
+        canvas {
+            border: solid 0.5px rgb(33, 33, 33);
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+
+    <script src="grid.js"></script>
+    <script src="findPath.js"></script>
+    <script src="Personagem.js"></script>
+</head>
+
+<body>
+
+    <canvas width="1000" height="1000" id="container"></canvas>
+
+    <script>
+        const canvas = document.getElementById('container')
+        const context = canvas.getContext('2d')
+
+        const PIXEL = 40;
+
+        const image = new Image()
+        image.src = 'img/actor.png'
+
+        const paramsGunslinger = {
+            x: 1 * PIXEL,
+            y: 1 * PIXEL,
+            width: 50,
+            height: 50,
+            context,
+            image
+        }
+
+        const Gunslinger = new Personagem(paramsGunslinger)
+
+
+        const loadImg = function loadImg(src) {
+            'use strict';
+            const paths = Array.isArray(src) ? src : [src];
+            const promise = [];
+            paths.forEach((path) => {
+                promise.push(new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve({ path, img, status: 'ok' });
+                    img.onerror = () => resolve({ path, img, status: 'error' });
+                    img.src = path;
+                }));
+            });
+            return Promise.all(promise);
+        };
+
+        const canvasBG = document.createElement('canvas')
+        const contextBG = canvasBG.getContext('2d')
+        canvasBG.width = canvas.width
+        canvasBG.height = canvas.height
+
+        loadImg([
+            'img/bgs.png',
+            'img/walls.png'
+        ]).then(function (spritesheet) {
+
+            for (let eixoY = 0; eixoY < MAP.length; eixoY++) {
+                for (let eixoX = 0; eixoX < MAP.length; eixoX++) {
+                    const [gridY, gridX, type] = [eixoY * PIXEL, eixoX * PIXEL, MAP[eixoY][eixoX]]
+
+                    contextBG.drawImage(spritesheet[0].img, 4 * 48, 6 * 48, 48, 48, gridX, gridY, PIXEL, PIXEL)
+
+                    if (Math.random() > 0.85) contextBG.drawImage(spritesheet[0].img, 4 * 48, 13 * 48, 48, 48, gridX, gridY, PIXEL, PIXEL)
+
+                    if (type == '1') {
+                        contextBG.drawImage(spritesheet[1].img, 7 * 48, 12 * 48, 48, 48, gridX, gridY, PIXEL, PIXEL)
+                    }
+
+                }
+            }
+
+            render();
+
+        });
+
+        const render = () => {
+            context.drawImage(canvasBG, 0, 0)
+            Gunslinger.render()
+        }
+
+
+    </script>
+
+</body>
+
+</html>

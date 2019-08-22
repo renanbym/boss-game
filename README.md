@@ -5,8 +5,8 @@
 * [x] Explosão
 * [x] Background
 * [x] Vilão correr atras do personagem
-* [ ] Coalisão Personagem
-* [ ] Coalisão Vilões
+* [ ] Colisão Personagem
+* [ ] Colisão Vilões
 
 ### Clean
 
@@ -17,9 +17,8 @@
 
 ### Boss
 
-* [ ] New Framework - A cada 30 segundos ele cresce
-* [ ] Algortimo - aleatorio
-* [ ] ; - Some e aparece em lugares diferentes
+* [ ] 1 - A cada 30 segundos ele cresce
+* [ ] 2 - 1 + Some e aparece em lugares diferentes
 
 ### Mapas
 
