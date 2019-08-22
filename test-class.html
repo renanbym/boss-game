@@ -178,6 +178,7 @@
 
             this.checkWall = (nextX, nextY) => {
                 const find = WALLS.find(wall => wall[0] == nextX / PIXEL && wall[1] == nextY / PIXEL)
+                console.log(find)
                 if (find) return false
                 return true
             }
