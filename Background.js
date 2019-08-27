@@ -35,11 +35,11 @@ class Background {
 
                         if (spritesheet[1]) {
                             if (Math.random() < 0.30) {
-                                this.contextBG.drawImage(spritesheet[1].img, 15 * 48, 13 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
+                                this.contextBG.drawImage(spritesheet[1].img, 9 * 48, 2 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
                             } else if ((Math.random() > 0.40)) {
-                                this.contextBG.drawImage(spritesheet[1].img, 14 * 48, 13 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
+                                this.contextBG.drawImage(spritesheet[1].img, 9 * 48, 2 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
                             } else {
-                                this.contextBG.drawImage(spritesheet[1].img, 12 * 48, 13 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
+                                this.contextBG.drawImage(spritesheet[1].img, 10 * 48, 2 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
                             }
                         }
 

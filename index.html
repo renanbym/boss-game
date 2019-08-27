@@ -16,6 +16,18 @@
             display: block;
             margin: 0 auto;
         }
+
+        .control {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        button{
+            display: block;
+            height: 50px;
+        }
+
     </style>
 
     <script src="grid.js"></script>
@@ -30,7 +42,14 @@
 
     <canvas width="1000" height="1000" id="container"></canvas>
 
+    <div class="control">
+        <button id="add-villain">Add Villain</button>
+    </div>
+
     <script>
+
+
+
         const canvas = document.getElementById('container')
         const context = canvas.getContext('2d', { stencil: true, preserveDrawingBuffer: false })
 
@@ -38,31 +57,124 @@
 
 
         const BG = new Background({ canvas, context, MAP, images: ['img/bgs.png', 'img/walls.png'], PIXEL })
-        const Gunslinger = new Personagem({ x: 0, y: 1, width: 49, height: 48, context, image: 'img/actor.png', PIXEL })
-        const Villain = new Personagem({ x: 2, y: 15, width: 49, height: 48, WORLD: WORLD_INVERT, velocity: 300, context, image: 'img/Villager1.png', walkingTo: Gunslinger, villain: true })
 
-        const animacoes = [
-            Gunslinger,
-            Villain,
-        ]
-
-        const render = () => {
-
-            BG.render()
-
-            animacoes.map((animacao, idx) => {
-                animacao.render()
-                if (!animacao.live) {
-                    animacao.die(() => animacoes.splice(idx, 1))
-                }
-            })
-
-            setTimeout(() => render(), 60);
-        };
-
-
+        const Gunslinger = new Personagem({ name: 'primeiro', width: 49, height: 48, WORLD, context, image: 'img/actor.png', PIXEL })
         Teclado.call(Gunslinger, WALLS, PIXEL);
-        window.onload = render;
+
+
+        class Explosao {
+
+            line = 1
+            column = 1
+            maxLine = 5
+            maxColumn = 5
+
+            lastTime = new Date().getTime();
+            intervalo = 0
+
+
+            image = new Image();
+
+            constructor() {
+                this.params(arguments[0])
+            }
+
+
+            params = ({ x, y, width, height, context, image }) => {
+                this.context = context
+
+                this.width = width
+                this.height = height
+                this.x = x
+                this.y = y
+
+                this.image = new Image()
+                this.image.src = image
+            }
+
+
+            nextFrame = () => {
+                const now = new Date().getTime();
+
+                this.line = this.line >= this.maxLine ? 0 : ++this.line;
+                this.column = this.column >= this.maxColumn ? 0 : ++this.column;
+
+                if (!this.lastTime) this.lastTime = now;
+
+                if (now - this.lastTime < this.intervalo) return;
+
+                this.lastTime = now;
+            }
+
+            render = () => {
+                this.context.drawImage(this.image, this.line * this.width, this.column * this.width, this.width, this.width, this.x, this.y, this.width, this.height)
+            }
+
+        }
+
+        class BossGame {
+
+            backgrounds = [];
+            foregrounds = []
+            players = []
+
+            removePlayer = (player) => {
+                this.players = this.players.filter(cur => cur != player)
+            }
+
+            addPlayer = (player) => {
+                this.players.push(player)
+            }
+
+            removeBackground = (background) => {
+                this.backgrounds = this.backgrounds.filter(cur => cur != background)
+            }
+
+            addBackground = (background) => {
+                this.backgrounds.push(background)
+            }
+
+            removeForeground = (foreground) => {
+                this.foregrounds = this.foregrounds.filter(cur => cur != foreground)
+            }
+
+            addForeground = (foreground) => {
+                this.foregrounds.push(foreground)
+            }
+
+            render = () => {
+                this.backgrounds.map(bg => bg.render());
+                this.players.map(player => {
+
+                    if (!player.live) this.removePlayer(player);
+                    if (player.walkingTo && !player.walkingTo.live) this.removePlayer(player);
+
+                    player.render()
+                });
+                this.foregrounds.map(bg => bg.render());
+                window.requestAnimationFrame(this.render);
+            }
+
+            start = () => {
+                window.requestAnimationFrame(this.render);
+            }
+
+            stop = () => {
+                window.cancelAnimationFrame(this.render)
+            }
+
+        }
+
+        const game = new BossGame();
+        game.addBackground(BG);
+        game.start()
+        game.addPlayer(Gunslinger);
+
+
+        document.querySelector('#add-villain').addEventListener('click', () => {
+            const Villain = new Personagem({ name: 'segundo', width: 49, height: 48, WORLD: WORLD_INVERT, velocity: 250, context, image: 'img/Villager1.png', walkingTo: Gunslinger, villain: true })
+            game.addPlayer(Villain);
+        })
 
     </script>
 

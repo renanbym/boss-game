@@ -6,8 +6,8 @@
 * [x] Background
 * [x] Vilão correr atras do personagem
 * [x] Colisão Paredes
-* [ ] Colisão Personagem
-* [ ] Colisão Vilões
+* [x] Colisão Personagem
+* [x] Colisão Vilões
 
 ### Clean
 
@@ -30,4 +30,5 @@
 
 ### V1
 
+[ ] Revisar codigo
 [ ] Clean code

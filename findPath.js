@@ -23,8 +23,8 @@ function findPath(world, pathStart, pathEnd) {
 
     // which heuristic should we use?
     // default: no diagonals (Manhattan)
-    // var distanceFunction = ManhattanDistance;
-    // var findNeighbours = function () { }; // empty
+    var distanceFunction = ManhattanDistance;
+    var findNeighbours = function () { }; // empty
 
     /*
  
@@ -42,9 +42,11 @@ function findPath(world, pathStart, pathEnd) {
     var distanceFunction = EuclideanDistance;
     var findNeighbours = DiagonalNeighbours;
   */
+
+
     // euclidean and squeezing through cracks allowed:
-    var distanceFunction = EuclideanDistance;
-    var findNeighbours = DiagonalNeighboursFree;
+    // var distanceFunction = EuclideanDistance;
+    // var findNeighbours = DiagonalNeighboursFree;
  
    
 

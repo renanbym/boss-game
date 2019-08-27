@@ -20,17 +20,40 @@ class Personagem {
     villain = false
     walkingTo
     walkingFn
+    walkWORLDingFn
     live = true
 
     constructor() {
         this.params(arguments[0])
 
+
         if (this.villain && this.walkingTo && this.walkingTo.live) this.walking();
     }
 
+
+    randomXY = () => {
+        const randY = Math.floor(Math.random() * this.WORLD.length);
+        const randX = Math.floor(Math.random() * this.WORLD[randY].length);
+
+        if (this.WORLD[randY][randX] == 0) {
+            return { x: randX, y: randY }
+        } else {
+            return this.randomXY()
+        }
+    }
+
+    checkXY = (x, y) => {
+        if (!x || !y) return this.randomXY()
+
+        if (this.WORLD[y][x] == 0) {
+            return { x, y }
+        } else {
+            return this.randomXY()
+        }
+    }
+
     params = ({ x, y, width, height, context, image, velocity, villain, walkingTo, WORLD, walkingFn }) => {
-        this.x = x
-        this.y = y
+
         this.width = width
         this.height = height
         this.context = context
@@ -39,6 +62,11 @@ class Personagem {
         this.walkingTo = walkingTo
         this.WORLD = WORLD
         this.walkingFn = walkingFn
+
+        const xy = this.checkXY(x, y)
+
+        this.x = xy.x
+        this.y = xy.y
 
         this.image = new Image()
         this.image.src = image
@@ -79,27 +107,27 @@ class Personagem {
     }
 
     explode = () => {
+
     }
 
     fire = () => {
     }
 
-    die = ( callback ) => {
-        alert('die');
-
-        callback();
+    die = (callback) => {
+        this.live = false
+        // callback()
     }
 
     destroy = () => {
 
     }
 
-    walking() {
+    walking = () => {
         const pathStart = [Math.round(this.x), Math.round(this.y)]
         const pathEnd = [Math.round(this.walkingTo.x), Math.round(this.walkingTo.y)]
 
         const currentPath = findPath(this.WORLD, pathStart, pathEnd)
-        if (currentPath[1] && this.live) {
+        if (currentPath[2] && this.live && this.walkingTo.live) {
 
             if (currentPath[1][1] != pathStart[1]) {
                 if (pathStart[1] > currentPath[1][1]) {
@@ -126,9 +154,7 @@ class Personagem {
             this.y = currentPath[1][1]
 
             this.nextFrame()
-            setTimeout(() => {
-                this.walking.call(this)
-            }, this.velocity)
+            setTimeout(() => { this.walking.call(this) }, this.velocity)
         } else {
             this.walkingTo.live = false
         }
