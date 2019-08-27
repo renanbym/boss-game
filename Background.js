@@ -24,15 +24,25 @@ class Background {
 
             for (let eixoY = 0; eixoY < this.MAP.length; eixoY++) {
                 for (let eixoX = 0; eixoX < this.MAP[0].length; eixoX++) {
-               
-                    const [gridY, gridX, type] = [eixoY * this.PIXEL, eixoX * this.PIXEL, this.MAP[eixoY][eixoX]]
-            
-                    this.contextBG.drawImage(spritesheet[0].img, 4 * 48, 6 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
 
-                    if (Math.random() > 0.85) this.contextBG.drawImage(spritesheet[0].img, 4 * 48, 13 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
+                    const [gridY, gridX, type] = [eixoY * this.PIXEL, eixoX * this.PIXEL, this.MAP[eixoY][eixoX]]
+
+                    this.contextBG.drawImage(spritesheet[0].img, 0 * 48, 1 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
+                    // this.contextBG.drawImage(spritesheet[0].img, 4 * 48, 6 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
+                    // if (Math.random() > 0.85) this.contextBG.drawImage(spritesheet[0].img, 4 * 48, 13 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
 
                     if (type == '1') {
-                        if (spritesheet[1]) this.contextBG.drawImage(spritesheet[1].img, 7 * 48, 12 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
+
+                        if (spritesheet[1]) {
+                            if (Math.random() < 0.30) {
+                                this.contextBG.drawImage(spritesheet[1].img, 15 * 48, 13 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
+                            } else if ((Math.random() > 0.40)) {
+                                this.contextBG.drawImage(spritesheet[1].img, 14 * 48, 13 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
+                            } else {
+                                this.contextBG.drawImage(spritesheet[1].img, 12 * 48, 13 * 48, 48, 48, gridX, gridY, this.PIXEL, this.PIXEL)
+                            }
+                        }
+
                     }
 
                 }

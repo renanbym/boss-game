@@ -9,6 +9,7 @@
         body {
             background: #262626;
             overflow: hidden;
+            zoom: 0.3
         }
 
         canvas {
@@ -32,24 +33,36 @@
 
     <script>
         const canvas = document.getElementById('container')
-        const context = canvas.getContext('2d')
+        const context = canvas.getContext('2d', { stencil: true, preserveDrawingBuffer: false })
 
         const PIXEL = 40;
 
-        const BG = new Background({ canvas, context, MAP, PIXEL, images: ['img/bgs.png', 'img/walls.png'] })
 
-        const Gunslinger = new Personagem({ x: 0, y: 1 * PIXEL, width: 49, height: 48, velocity: PIXEL, context, image: 'img/actor.png', PIXEL })
+        const BG = new Background({ canvas, context, MAP, images: ['img/bgs.png', 'img/walls.png'], PIXEL })
+        const Gunslinger = new Personagem({ x: 0, y: 1, width: 49, height: 48, context, image: 'img/actor.png', PIXEL })
+        const Villain = new Personagem({ x: 2, y: 15, width: 49, height: 48, WORLD: WORLD_INVERT, velocity: 300, context, image: 'img/Villager1.png', walkingTo: Gunslinger, villain: true })
 
-        const Vilao = new Personagem({ x: 2 * PIXEL, y: 15 * PIXEL, width: 49, height: 48, WORLD: WORLD_INVERT, velocity: PIXEL, context, image: 'img/Villager1.png', walkingTo: Gunslinger, villain: true, PIXEL })
+        const animacoes = [
+            Gunslinger,
+            Villain,
+        ]
 
         const render = () => {
+
             BG.render()
-            Gunslinger.render()
-            Vilao.render()
-        }
 
-        Teclado.call(Gunslinger, PIXEL, WALLS, render);
+            animacoes.map((animacao, idx) => {
+                animacao.render()
+                if (!animacao.live) {
+                    animacao.die(() => animacoes.splice(idx, 1))
+                }
+            })
 
+            setTimeout(() => render(), 60);
+        };
+
+
+        Teclado.call(Gunslinger, WALLS, PIXEL);
         window.onload = render;
 
     </script>
