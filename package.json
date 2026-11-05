@@ -3,5 +3,16 @@
   "version": "1.0.0",
   "description": "Jogo em canvas: fuja dos vilões que te perseguem pelo labirinto.",
   "private": true,
-  "license": "ISC"
+  "license": "ISC",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
+  }
 }

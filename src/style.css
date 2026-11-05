@@ -1,0 +1,44 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #262626;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*
+ * O canvas tem o tamanho do mapa em pixels; aqui ele só é escalado para caber na janela.
+ * --aspect (largura / altura do mapa) é definido pelo main.ts.
+ */
+#game {
+  display: block;
+  flex: none;
+  width: min(100vw, calc(100vh * var(--aspect, 1)));
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.control {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.control button {
+  height: 50px;
+  padding: 0 16px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.error {
+  position: absolute;
+  color: #ff8a80;
+}
