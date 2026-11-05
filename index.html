@@ -35,7 +35,6 @@
     <script src="Teclado.js"></script>
     <script src="Background.js"></script>
     <script src="Personagem.js"></script>
-    <script src="Vilao.js"></script>
 </head>
 
 <body>
@@ -62,6 +61,10 @@
         Teclado.call(Gunslinger, WALLS, PIXEL);
 
 
+        /**
+         * Animação de explosão a partir de uma spritesheet em grade.
+         * Ainda não é usada; fica para o ataque da Fase 3.
+         */
         class Explosao {
 
             line = 1
@@ -75,11 +78,23 @@
 
             image = new Image();
 
+            /**
+             * @param {Object} options
+             * @param {number} options.x Posição x, em pixels.
+             * @param {number} options.y Posição y, em pixels.
+             * @param {number} options.width Largura do quadro, em pixels.
+             * @param {number} options.height Altura de desenho, em pixels.
+             * @param {CanvasRenderingContext2D} options.context Contexto de desenho.
+             * @param {string} options.image Caminho da spritesheet.
+             */
             constructor() {
                 this.params(arguments[0])
             }
 
-
+            /**
+             * Copia as opções do construtor para a instância e carrega a imagem.
+             * @param {Object} options Mesmas opções aceitas pelo construtor.
+             */
             params = ({ x, y, width, height, context, image }) => {
                 this.context = context
 
@@ -92,7 +107,9 @@
                 this.image.src = image
             }
 
-
+            /**
+             * Avança para o próximo quadro da explosão, respeitando `intervalo`.
+             */
             nextFrame = () => {
                 const now = new Date().getTime();
 
@@ -106,61 +123,103 @@
                 this.lastTime = now;
             }
 
+            /**
+             * Desenha o quadro atual.
+             */
             render = () => {
                 this.context.drawImage(this.image, this.line * this.width, this.column * this.width, this.width, this.width, this.x, this.y, this.width, this.height)
             }
 
         }
 
+        /**
+         * Loop principal: desenha fundos, personagens e frentes a cada frame.
+         */
         class BossGame {
 
             backgrounds = [];
             foregrounds = []
             players = []
+            frameId = null
 
+            /**
+             * Remove um personagem da cena.
+             * @param {Personagem} player
+             */
             removePlayer = (player) => {
                 this.players = this.players.filter(cur => cur != player)
             }
 
+            /**
+             * Adiciona um personagem à cena.
+             * @param {Personagem} player
+             */
             addPlayer = (player) => {
                 this.players.push(player)
             }
 
+            /**
+             * Remove uma camada de fundo.
+             * @param {{render: Function}} background
+             */
             removeBackground = (background) => {
                 this.backgrounds = this.backgrounds.filter(cur => cur != background)
             }
 
+            /**
+             * Adiciona uma camada de fundo, desenhada antes dos personagens.
+             * @param {{render: Function}} background
+             */
             addBackground = (background) => {
                 this.backgrounds.push(background)
             }
 
+            /**
+             * Remove uma camada de frente.
+             * @param {{render: Function}} foreground
+             */
             removeForeground = (foreground) => {
                 this.foregrounds = this.foregrounds.filter(cur => cur != foreground)
             }
 
+            /**
+             * Adiciona uma camada de frente, desenhada depois dos personagens.
+             * @param {{render: Function}} foreground
+             */
             addForeground = (foreground) => {
                 this.foregrounds.push(foreground)
             }
 
+            /**
+             * Desenha um frame e agenda o próximo.
+             * Antes de desenhar, tira da cena quem morreu e vilões cujo alvo morreu.
+             */
             render = () => {
-                this.backgrounds.map(bg => bg.render());
-                this.players.map(player => {
+                this.players = this.players.filter(player =>
+                    player.live && !(player.walkingTo && !player.walkingTo.live)
+                )
 
-                    if (!player.live) this.removePlayer(player);
-                    if (player.walkingTo && !player.walkingTo.live) this.removePlayer(player);
+                this.backgrounds.forEach(bg => bg.render());
+                this.players.forEach(player => player.render());
+                this.foregrounds.forEach(fg => fg.render());
 
-                    player.render()
-                });
-                this.foregrounds.map(bg => bg.render());
-                window.requestAnimationFrame(this.render);
+                this.frameId = window.requestAnimationFrame(this.render);
             }
 
+            /**
+             * Inicia o loop, se ainda não estiver rodando.
+             */
             start = () => {
-                window.requestAnimationFrame(this.render);
+                if (this.frameId !== null) return
+                this.frameId = window.requestAnimationFrame(this.render);
             }
 
+            /**
+             * Para o loop.
+             */
             stop = () => {
-                window.cancelAnimationFrame(this.render)
+                window.cancelAnimationFrame(this.frameId)
+                this.frameId = null
             }
 
         }
@@ -172,7 +231,7 @@
 
 
         document.querySelector('#add-villain').addEventListener('click', () => {
-            const Villain = new Personagem({ name: 'segundo', width: 49, height: 48, WORLD: WORLD_INVERT, velocity: 250, context, image: 'img/Villager1.png', walkingTo: Gunslinger, villain: true })
+            const Villain = new Personagem({ name: 'segundo', width: 49, height: 48, WORLD, PIXEL, velocity: 250, context, image: 'img/Villager1.png', walkingTo: Gunslinger, villain: true })
             game.addPlayer(Villain);
         })
 

@@ -1,3 +1,7 @@
+/**
+ * Fundo do mapa: desenha o chão e as paredes uma vez num canvas fora da tela
+ * e copia esse canvas para o canvas principal a cada frame.
+ */
 class Background {
 
     canvasBG
@@ -7,6 +11,14 @@ class Background {
     context
     canvas
 
+    /**
+     * @param {Object} options
+     * @param {string[]} options.images Caminhos das spritesheets: [0] chão, [1] paredes.
+     * @param {number[][]} options.MAP Mapa indexado como MAP[y][x] (1 = parede).
+     * @param {CanvasRenderingContext2D} options.context Contexto do canvas principal.
+     * @param {HTMLCanvasElement} options.canvas Canvas principal.
+     * @param {number} options.PIXEL Tamanho de cada casa do grid, em pixels.
+     */
     constructor() {
 
         this.params(arguments[0])
@@ -18,6 +30,9 @@ class Background {
 
     }
 
+    /**
+     * Carrega as imagens e desenha chão e paredes no canvas fora da tela.
+     */
     init() {
 
         this.loadImg().then((spritesheet) => {
@@ -51,6 +66,10 @@ class Background {
         });
     }
 
+    /**
+     * Copia as opções do construtor para a instância e inicia o carregamento.
+     * @param {Object} options Mesmas opções aceitas pelo construtor.
+     */
     params = ({ images, MAP, context, canvas, PIXEL }) => {
         this.images = images
         this.MAP = MAP
@@ -61,12 +80,19 @@ class Background {
         this.init();
     }
 
+    /**
+     * Limpa o canvas principal e desenha o fundo pronto.
+     */
     render = () => {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.context.drawImage(this.canvasBG, 0, 0)
     }
 
 
+    /**
+     * Carrega todas as imagens de `images`. Uma imagem com erro não rejeita a promise.
+     * @returns {Promise<Array<{path: string, img: HTMLImageElement, status: 'ok'|'error'}>>}
+     */
     loadImg = () => {
         'use strict';
         const paths = this.images;

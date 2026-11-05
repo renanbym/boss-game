@@ -1,5 +1,11 @@
-// world is a 2d array of integers (eg world[10][15] = 0)
-// pathStart and pathEnd are arrays like [5,10]
+/**
+ * Encontra o menor caminho entre duas casas usando A* (sem diagonais).
+ * @param {number[][]} world Grid indexado como world[y][x]; 0 = livre, maior que 0 = bloqueado.
+ * @param {[number, number]} pathStart Casa de origem, como [x, y].
+ * @param {[number, number]} pathEnd Casa de destino, como [x, y].
+ * @returns {Array<[number, number]>} Casas do caminho, da origem ao destino (inclusive),
+ *   como [x, y]. Vazio se não houver caminho.
+ */
 function findPath(world, pathStart, pathEnd) {
     // shortcuts for speed
     var abs = Math.abs;
@@ -14,9 +20,6 @@ function findPath(world, pathStart, pathEnd) {
     var maxWalkableTileNum = 0;
 
     // keep track of the world dimensions
-    // Note that this A-star implementation expects the world array to be square: 
-    // it must have equal height and width. If your game world is rectangular, 
-    // just fill the array with dummy values to pad the empty space.
     var worldWidth = world[0].length;
     var worldHeight = world.length;
     var worldSize = worldWidth * worldHeight;
@@ -53,26 +56,46 @@ function findPath(world, pathStart, pathEnd) {
     // distanceFunction functions
     // these return how far away a point is to another
 
-    function ManhattanDistance(Point, Goal) {	// linear movement - no diagonals - just cardinal directions (NSEW)
+    /**
+     * Distância Manhattan: só movimentos nas 4 direções.
+     * @param {{x: number, y: number}} Point
+     * @param {{x: number, y: number}} Goal
+     * @returns {number}
+     */
+    function ManhattanDistance(Point, Goal) {
         return abs(Point.x - Goal.x) + abs(Point.y - Goal.y);
     }
 
-    function DiagonalDistance(Point, Goal) {	// diagonal movement - assumes diag dist is 1, same as cardinals
+    /**
+     * Distância com diagonais custando o mesmo que movimentos retos.
+     * @param {{x: number, y: number}} Point
+     * @param {{x: number, y: number}} Goal
+     * @returns {number}
+     */
+    function DiagonalDistance(Point, Goal) {
         return max(abs(Point.x - Goal.x), abs(Point.y - Goal.y));
     }
 
-    function EuclideanDistance(Point, Goal) {	// diagonals are considered a little farther than cardinal directions
-        // diagonal movement using Euclide (AC = sqrt(AB^2 + BC^2))
-        // where AB = x2 - x1 and BC = y2 - y1 and AC will be [x3, y3]
+    /**
+     * Distância euclidiana: diagonais custam um pouco mais que movimentos retos.
+     * @param {{x: number, y: number}} Point
+     * @param {{x: number, y: number}} Goal
+     * @returns {number}
+     */
+    function EuclideanDistance(Point, Goal) {
         return sqrt(pow(Point.x - Goal.x, 2) + pow(Point.y - Goal.y, 2));
     }
 
     // Neighbours functions, used by findNeighbours function
     // to locate adjacent available cells that aren't blocked
 
-    // Returns every available North, South, East or West
-    // cell that is empty. No diagonals,
-    // unless distanceFunction function is not Manhattan
+    /**
+     * Vizinhos livres ao norte, sul, leste e oeste, mais os diagonais
+     * que `findNeighbours` acrescentar.
+     * @param {number} x
+     * @param {number} y
+     * @returns {Array<{x: number, y: number}>}
+     */
     function Neighbours(x, y) {
         var N = y - 1,
             S = y + 1,
@@ -95,9 +118,19 @@ function findPath(world, pathStart, pathEnd) {
         return result;
     }
 
-    // returns every available North East, South East,
-    // South West or North West cell - no squeezing through
-    // "cracks" between two diagonals
+    /**
+     * Acrescenta a `result` os vizinhos diagonais livres, sem passar
+     * espremido entre duas paredes em quina.
+     * @param {boolean} myN Norte livre.
+     * @param {boolean} myS Sul livre.
+     * @param {boolean} myE Leste livre.
+     * @param {boolean} myW Oeste livre.
+     * @param {number} N Linha ao norte.
+     * @param {number} S Linha ao sul.
+     * @param {number} E Coluna a leste.
+     * @param {number} W Coluna a oeste.
+     * @param {Array<{x: number, y: number}>} result Lista que recebe os vizinhos.
+     */
     function DiagonalNeighbours(myN, myS, myE, myW, N, S, E, W, result) {
         if (myN) {
             if (myE && canWalkHere(E, N))
@@ -113,9 +146,19 @@ function findPath(world, pathStart, pathEnd) {
         }
     }
 
-    // returns every available North East, South East,
-    // South West or North West cell including the times that
-    // you would be squeezing through a "crack"
+    /**
+     * Acrescenta a `result` os vizinhos diagonais livres, permitindo passar
+     * espremido entre duas paredes em quina.
+     * @param {boolean} myN Ignorado; recalculado pelos limites do grid.
+     * @param {boolean} myS Ignorado; recalculado pelos limites do grid.
+     * @param {boolean} myE Ignorado; recalculado pelos limites do grid.
+     * @param {boolean} myW Ignorado; recalculado pelos limites do grid.
+     * @param {number} N Linha ao norte.
+     * @param {number} S Linha ao sul.
+     * @param {number} E Coluna a leste.
+     * @param {number} W Coluna a oeste.
+     * @param {Array<{x: number, y: number}>} result Lista que recebe os vizinhos.
+     */
     function DiagonalNeighboursFree(myN, myS, myE, myW, N, S, E, W, result) {
         myN = N > -1;
         myS = S < worldHeight;
@@ -135,15 +178,25 @@ function findPath(world, pathStart, pathEnd) {
         }
     }
 
-    // returns boolean value (world cell is available and open)
+    /**
+     * Indica se a casa existe no grid e está livre.
+     * @param {number} x Coluna.
+     * @param {number} y Linha.
+     * @returns {boolean}
+     */
     function canWalkHere(x, y) {
-        return ((world[x] != null) &&
-            (world[x][y] != null) &&
-            (world[x][y] <= maxWalkableTileNum));
+        return ((world[y] != null) &&
+            (world[y][x] != null) &&
+            (world[y][x] <= maxWalkableTileNum));
     };
 
-    // Node function, returns a new object with Node properties
-    // Used in the calculatePath function to store route costs, etc.
+    /**
+     * Cria um nó do A*.
+     * @param {Object|null} Parent Nó anterior no caminho.
+     * @param {{x: number, y: number}} Point Casa do nó.
+     * @returns {{Parent: Object|null, value: number, x: number, y: number, f: number, g: number}}
+     *   `value` é o índice linear da casa; `g` o custo desde a origem; `f` o custo estimado total.
+     */
     function Node(Parent, Point) {
         var newNode = {
             // pointer to another Node object
@@ -164,7 +217,10 @@ function findPath(world, pathStart, pathEnd) {
         return newNode;
     }
 
-    // Path function, executes AStar algorithm operations
+    /**
+     * Executa o A* de `pathStart` até `pathEnd`.
+     * @returns {Array<[number, number]>} Caminho como [x, y], ou vazio se não houver.
+     */
     function calculatePath() {
         // create Nodes from the Start and End x,y coordinates
         var mypathStart = Node(null, { x: pathStart[0], y: pathStart[1] });
