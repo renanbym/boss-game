@@ -7,7 +7,7 @@ import './style.css'
  * Busca um elemento obrigatório da página.
  * @param selector Seletor CSS.
  * @returns O elemento encontrado.
- * @throws Se o elemento não existir.
+ * @throws {Error} Se o elemento não existir.
  */
 function requireElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector)

@@ -1,4 +1,4 @@
-import type { TileMap } from '../world/TileMap'
+import type { Grid } from '../world/Grid'
 import { findPath, type Point, type Walkable } from '../world/Pathfinding'
 import { Entity, STEP, type Direction, type Look } from './Entity'
 
@@ -68,7 +68,12 @@ export class Enemy extends Entity {
    * @param options Vida, velocidade e habilidades.
    * @param target Personagem perseguido.
    */
-  constructor(look: Look, start: Point, options: EnemyOptions, public target: Entity) {
+  constructor(
+    look: Look,
+    start: Point,
+    options: EnemyOptions,
+    public target: Entity,
+  ) {
     super(look, start, options.stepDuration)
     this.hp = options.hp
     this.maxHp = options.hp
@@ -86,7 +91,7 @@ export class Enemy extends Entity {
    * @param dt Tempo desde o último frame, em segundos.
    * @param map Mapa da fase.
    */
-  step(dt: number, map: TileMap): void {
+  step(dt: number, map: Grid): void {
     this.stun = Math.max(0, this.stun - dt)
     this.update(dt)
     this.updateAbilities(dt, map)
@@ -109,7 +114,7 @@ export class Enemy extends Entity {
    * @param map Mapa da fase.
    * @returns true se o golpe contou.
    */
-  hurt(from: Direction, map: TileMap): boolean {
+  hurt(from: Direction, map: Grid): boolean {
     if (this.isStunned || !this.alive) return false
     this.hp--
     this.stun = STUN_TIME
@@ -130,7 +135,7 @@ export class Enemy extends Entity {
    * @param map Mapa da fase.
    * @param minDistance Distância mínima, em casas, até o alvo.
    */
-  teleportAway(map: TileMap, minDistance: number): void {
+  teleportAway(map: Grid, minDistance: number): void {
     const from = { ...this.tile }
     const to = map.randomFreeTile([this.target.tile], minDistance)
     this.placeAt(to)
@@ -153,7 +158,7 @@ export class Enemy extends Entity {
    * @param dt Tempo desde o último frame, em segundos.
    * @param map Mapa da fase.
    */
-  private updateAbilities(dt: number, map: TileMap): void {
+  private updateAbilities(dt: number, map: Grid): void {
     const { speedUp, teleport } = this.abilities
 
     if (speedUp) {
@@ -178,7 +183,7 @@ export class Enemy extends Entity {
    * Fica translúcido dentro de paredes e pisca quando atordoado.
    * @param map Mapa da fase.
    */
-  private updateOpacity(map: TileMap): void {
+  private updateOpacity(map: Grid): void {
     const p = this.position
     const insideWall = !map.isWalkable(Math.round(p.x), Math.round(p.y))
     const blinking = this.isStunned && Math.floor(this.stun * 12) % 2 === 0
@@ -190,7 +195,7 @@ export class Enemy extends Entity {
    * @param map Mapa da fase.
    * @returns O grid adequado às habilidades.
    */
-  private grid(map: TileMap): Walkable {
+  private grid(map: Grid): Walkable {
     return this.abilities.ghost ? map.ghostGrid : map
   }
 

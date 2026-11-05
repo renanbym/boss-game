@@ -38,7 +38,7 @@ export function assetUrl(path: string): string {
  * Carrega uma imagem.
  * @param src Caminho relativo à pasta `public/`.
  * @returns Promise resolvida com a imagem pronta para desenhar.
- * @throws Rejeita se a imagem não puder ser carregada.
+ * @throws {Error} Rejeita se a imagem não puder ser carregada.
  */
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {

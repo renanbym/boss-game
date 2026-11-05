@@ -84,7 +84,7 @@ export class Game {
 
   /** O boss da fase, enquanto estiver vivo. */
   get boss(): Enemy | undefined {
-    return this.enemies.find(e => e.isBoss)
+    return this.enemies.find((e) => e.isBoss)
   }
 
   /** Inicia o loop, se ainda não estiver rodando. */
@@ -214,7 +214,7 @@ export class Game {
 
     if (this.state !== 'paused') {
       for (const effect of this.effects) effect.update(dt)
-      this.effects = this.effects.filter(e => !e.done)
+      this.effects = this.effects.filter((e) => !e.done)
     }
 
     if (this.state !== 'playing') this.input.clearTap() // setas fora da partida não viram passo depois
@@ -252,17 +252,19 @@ export class Game {
     const target = player.attack()
     if (!target) return
 
-    this.effects.push(new SpriteEffect(
-      { image: this.images.slash, firstFrame: 0, frameCount: 6 },
-      { center: target, size: 1.6, frameTime: 0.04, rotation: SLASH_ROTATION[player.facing] },
-    ))
+    this.effects.push(
+      new SpriteEffect(
+        { image: this.images.slash, firstFrame: 0, frameCount: 6 },
+        { center: target, size: 1.6, frameTime: 0.04, rotation: SLASH_ROTATION[player.facing] },
+      ),
+    )
 
     for (const enemy of this.enemies) {
       if (enemy.distanceToPoint(target) > SETTINGS.hitDistance) continue
       if (!enemy.hurt(player.facing, this.map)) continue
       if (!enemy.alive) this.onEnemyKilled(enemy)
     }
-    this.enemies = this.enemies.filter(e => e.alive)
+    this.enemies = this.enemies.filter((e) => e.alive)
   }
 
   /**
@@ -270,20 +272,24 @@ export class Game {
    * @param enemy Inimigo derrotado.
    */
   private onEnemyKilled(enemy: Enemy): void {
-    this.effects.push(new SpriteEffect(
-      { image: this.images.burst, firstFrame: 5, frameCount: 12 },
-      { center: enemy.position, size: enemy.isBoss ? 3 : 1.8, frameTime: 0.05 },
-    ))
+    this.effects.push(
+      new SpriteEffect(
+        { image: this.images.burst, firstFrame: 5, frameCount: 12 },
+        { center: enemy.position, size: enemy.isBoss ? 3 : 1.8, frameTime: 0.05 },
+      ),
+    )
     if (!enemy.isBoss) return
 
     // Os lacaios somem junto com o boss
     for (const minion of this.enemies) {
       if (minion === enemy || !minion.alive) continue
       minion.die()
-      this.effects.push(new SpriteEffect(
-        { image: this.images.burst, firstFrame: 5, frameCount: 12 },
-        { center: minion.position, size: 1.8, frameTime: 0.05 },
-      ))
+      this.effects.push(
+        new SpriteEffect(
+          { image: this.images.burst, firstFrame: 5, frameCount: 12 },
+          { center: minion.position, size: 1.8, frameTime: 0.05 },
+        ),
+      )
     }
     this.levelCleared()
   }
@@ -306,9 +312,7 @@ export class Game {
    * @param player Jogador.
    */
   private checkCaught(player: Player): void {
-    const catcher = this.enemies.find(e =>
-      e.alive && !e.isStunned && e.distanceTo(player) < SETTINGS.catchDistance,
-    )
+    const catcher = this.enemies.find((e) => e.alive && !e.isStunned && e.distanceTo(player) < SETTINGS.catchDistance)
     if (!catcher || !player.hurt()) return
 
     if (!player.alive) {
@@ -338,8 +342,9 @@ export class Game {
     map.render(ctx)
 
     // Quem está mais embaixo é desenhado por último, para sobrepor quem está atrás
-    const entities = [...this.enemies, ...(this.player && this.state !== 'intro' ? [this.player] : [])]
-      .sort((a, b) => a.position.y - b.position.y)
+    const entities = [...this.enemies, ...(this.player && this.state !== 'intro' ? [this.player] : [])].sort(
+      (a, b) => a.position.y - b.position.y,
+    )
     for (const entity of entities) entity.render(ctx, map.tileSize)
     for (const effect of this.effects) effect.render(ctx, map.tileSize)
 
@@ -347,10 +352,14 @@ export class Game {
 
     switch (this.state) {
       case 'menu':
-        this.renderOverlay('Boss Game', [
-          'Derrote o boss de cada fase sem perder as 3 vidas.',
-          'Setas ou WASD: andar   ·   Espaço: atacar   ·   P: pausar',
-        ], 'Enter para começar')
+        this.renderOverlay(
+          'Boss Game',
+          [
+            'Derrote o boss de cada fase sem perder as 3 vidas.',
+            'Setas ou WASD: andar   ·   Espaço: atacar   ·   P: pausar',
+          ],
+          'Enter para começar',
+        )
         break
       case 'intro': {
         const n = this.levelIndex + 1
@@ -362,10 +371,18 @@ export class Game {
         this.renderOverlay('Pausado', [], 'P para continuar')
         break
       case 'gameover':
-        this.renderOverlay('Você foi pego!', [`Chegou à fase ${this.levelIndex + 1} de ${LEVELS.length}.`], 'Enter para jogar de novo')
+        this.renderOverlay(
+          'Você foi pego!',
+          [`Chegou à fase ${this.levelIndex + 1} de ${LEVELS.length}.`],
+          'Enter para jogar de novo',
+        )
         break
       case 'victory':
-        this.renderOverlay('Você venceu!', [`Derrotou os ${LEVELS.length} bosses em ${this.totalTime.toFixed(1)}s.`], 'Enter para jogar de novo')
+        this.renderOverlay(
+          'Você venceu!',
+          [`Derrotou os ${LEVELS.length} bosses em ${this.totalTime.toFixed(1)}s.`],
+          'Enter para jogar de novo',
+        )
         break
     }
   }
@@ -374,7 +391,9 @@ export class Game {
   private renderHud(): void {
     const { ctx, map } = this
     const player = this.player
-    const hearts = player ? '♥'.repeat(player.lives) + '♡'.repeat(Math.max(0, PLAYER_SETTINGS.lives - player.lives)) : ''
+    const hearts = player
+      ? '♥'.repeat(player.lives) + '♡'.repeat(Math.max(0, PLAYER_SETTINGS.lives - player.lives))
+      : ''
     const text = `Fase ${this.levelIndex + 1}/${LEVELS.length}   ${hearts}   ${this.levelTime.toFixed(1)}s`
 
     ctx.font = 'bold 20px system-ui, sans-serif'

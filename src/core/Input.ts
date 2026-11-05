@@ -86,7 +86,7 @@ export class Input {
     const direction = DIRECTION_KEYS[event.key] ?? DIRECTION_KEYS[event.key.toLowerCase()]
     if (direction) {
       event.preventDefault() // evita rolar a página com as setas
-      this.held = this.held.filter(d => d !== direction)
+      this.held = this.held.filter((d) => d !== direction)
       this.held.push(direction)
       if (!event.repeat) this.tapped = direction
     }
@@ -100,7 +100,7 @@ export class Input {
    */
   private onKeyUp = (event: KeyboardEvent): void => {
     const direction = DIRECTION_KEYS[event.key] ?? DIRECTION_KEYS[event.key.toLowerCase()]
-    if (direction) this.held = this.held.filter(d => d !== direction)
+    if (direction) this.held = this.held.filter((d) => d !== direction)
   }
 
   /** Solta tudo quando a janela perde o foco, para o personagem não "grudar" andando. */

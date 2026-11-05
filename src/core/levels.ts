@@ -37,14 +37,23 @@ export const LEVELS: readonly LevelConfig[] = [
   {
     map: MAPS[1]!,
     description: 'Agora ele também some e reaparece em outro lugar.',
-    boss: { character: 5, stepDuration: 0.3, hp: 5, isBoss: true, abilities: { speedUp: SPEED_UP, teleport: TELEPORT } },
+    boss: {
+      character: 5,
+      stepDuration: 0.3,
+      hp: 5,
+      isBoss: true,
+      abilities: { speedUp: SPEED_UP, teleport: TELEPORT },
+    },
     minions: 1,
   },
   {
     map: MAPS[2]!,
     description: 'E agora atravessa paredes.',
     boss: {
-      character: 7, stepDuration: 0.3, hp: 6, isBoss: true,
+      character: 7,
+      stepDuration: 0.3,
+      hp: 6,
+      isBoss: true,
       abilities: { speedUp: SPEED_UP, teleport: TELEPORT, ghost: true },
     },
     minions: 2,

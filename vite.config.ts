@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   // Caminhos relativos para o build funcionar em qualquer subpasta (ex.: GitHub Pages)
@@ -6,5 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+  },
+  test: {
+    include: ['src/**/*.test.ts'],
+    // A lógica do jogo não depende do DOM; quem precisa usa `// @vitest-environment jsdom`
+    environment: 'node',
   },
 })

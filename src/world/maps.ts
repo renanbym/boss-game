@@ -21,7 +21,7 @@ export interface LevelMap {
  * Converte um arquivo de mapa e valida o formato.
  * @param file Conteúdo do JSON.
  * @returns O mapa pronto para o `TileMap`.
- * @throws Se o mapa estiver vazio, não for retangular ou tiver caracteres desconhecidos.
+ * @throws {Error} Se o mapa estiver vazio, não for retangular ou tiver caracteres desconhecidos.
  */
 export function parseMap(file: MapFile): LevelMap {
   const width = file.tiles[0]?.length ?? 0

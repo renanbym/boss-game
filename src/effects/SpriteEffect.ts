@@ -37,7 +37,10 @@ export class SpriteEffect {
    * @param sheet Spritesheet e intervalo de quadros.
    * @param options Posição, tamanho, velocidade e rotação.
    */
-  constructor(private readonly sheet: EffectSheet, private readonly options: EffectOptions) {
+  constructor(
+    private readonly sheet: EffectSheet,
+    private readonly options: EffectOptions,
+  ) {
     this.frameTime = options.frameTime ?? 0.05
     this.rotation = options.rotation ?? 0
   }

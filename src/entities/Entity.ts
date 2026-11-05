@@ -159,9 +159,7 @@ export class Entity {
   render(ctx: CanvasRenderingContext2D, tileSize: number): void {
     if (this.opacity <= 0) return
 
-    const walkColumn = this.isMoving
-      ? WALK_CYCLE[Math.floor(this.animTime / FRAME_TIME) % WALK_CYCLE.length]!
-      : 1
+    const walkColumn = this.isMoving ? WALK_CYCLE[Math.floor(this.animTime / FRAME_TIME) % WALK_CYCLE.length]! : 1
     const baseColumn = (this.look.character % CHARACTERS_PER_ROW) * 3
     const baseRow = Math.floor(this.look.character / CHARACTERS_PER_ROW) * 4
     const { x, y } = this.position
@@ -170,11 +168,14 @@ export class Entity {
     ctx.globalAlpha = this.opacity
     ctx.drawImage(
       this.look.image,
-      (baseColumn + walkColumn) * FRAME_SIZE, (baseRow + SHEET_ROW[this.facing]) * FRAME_SIZE,
-      FRAME_SIZE, FRAME_SIZE,
+      (baseColumn + walkColumn) * FRAME_SIZE,
+      (baseRow + SHEET_ROW[this.facing]) * FRAME_SIZE,
+      FRAME_SIZE,
+      FRAME_SIZE,
       Math.round(x * tileSize + (tileSize - FRAME_SIZE) / 2),
       Math.round(y * tileSize + tileSize - FRAME_SIZE),
-      FRAME_SIZE, FRAME_SIZE,
+      FRAME_SIZE,
+      FRAME_SIZE,
     )
     ctx.restore()
   }
