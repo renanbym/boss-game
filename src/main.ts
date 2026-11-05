@@ -1,12 +1,7 @@
 import { loadImages } from './core/assets'
 import { Game } from './core/Game'
 import { Input } from './core/Input'
-import { MAP_1 } from './world/maps'
-import { TileMap } from './world/TileMap'
 import './style.css'
-
-/** Tamanho de cada casa do mapa na tela, em pixels. */
-const TILE_SIZE = 40
 
 /**
  * Busca um elemento obrigatório da página.
@@ -26,12 +21,10 @@ async function bootstrap(): Promise<void> {
   const addVillain = requireElement<HTMLButtonElement>('#add-villain')
 
   const images = await loadImages()
-  const map = new TileMap(MAP_1, TILE_SIZE, images)
-  const game = new Game(canvas, map, images, new Input())
-  canvas.style.setProperty('--aspect', String(map.pixelWidth / map.pixelHeight))
+  const game = new Game(canvas, images, new Input())
 
   addVillain.addEventListener('click', () => {
-    game.addBoss()
+    game.addMinion()
     addVillain.blur() // devolve o foco ao jogo, para Enter/espaço não clicarem no botão de novo
   })
 

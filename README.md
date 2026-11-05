@@ -1,6 +1,14 @@
 # Boss Game
 
-Jogo em canvas: ande pelo labirinto e fuja dos vilões que te perseguem.
+Jogo em canvas: atravesse 3 fases e derrote o boss de cada uma. A cada fase o boss ganha uma habilidade nova.
+
+| Fase | Mapa | Boss |
+|---|---|---|
+| 1 | Labirinto | Fica mais rápido a cada 10 segundos |
+| 2 | Ruínas | + Some e reaparece longe de você a cada 6 segundos |
+| 3 | Arena | + Atravessa paredes |
+
+Você tem 3 vidas para o jogo todo. Ao ser pego, perde uma, fica invulnerável por 2 segundos e quem te pegou é jogado para longe.
 
 ## Como rodar
 
@@ -23,26 +31,34 @@ Abra http://localhost:5173.
 ## Controles
 
 - **Setas ou WASD**: andar
-- **Enter**: começar / jogar de novo
+- **Espaço**: atacar a casa à frente (o inimigo atingido fica atordoado e é empurrado)
+- **Enter**: começar / avançar / jogar de novo
 - **P**: pausar
-- **Adicionar vilão** (botão): coloca mais um vilão no mapa
+- **Adicionar vilão** (botão): coloca mais um lacaio no mapa
 
 ## Estrutura
 
 ```
 src/
   main.ts              carrega imagens e monta o jogo
-  core/Game.ts         loop com delta time e estados (menu, jogando, pausado, game over)
+  core/Game.ts         loop com delta time, estados e progressão das fases
+  core/levels.ts       configuração das fases (mapa, boss, lacaios)
   core/Input.ts        estado do teclado
-  core/assets.ts       carregamento das imagens
+  core/assets.ts       carregamento de imagens e sons
   entities/Entity.ts   personagem que anda casa a casa com movimento suave
-  entities/Player.ts   personagem controlado pelo teclado
-  entities/Boss.ts     vilão que persegue o jogador
-  world/TileMap.ts     mapa: colisão e desenho do cenário
+  entities/Player.ts   jogador: vidas, ataque, invulnerabilidade
+  entities/Enemy.ts    boss e lacaios: perseguição e habilidades
+  effects/SpriteEffect.ts  animações de golpe, explosão e teletransporte
+  world/TileMap.ts     mapa: colisão, regiões e desenho do cenário
   world/Pathfinding.ts A* no grid
-  world/maps.ts        dados dos mapas
+  world/maps.ts        leitura e validação dos mapas
+  world/maps/*.json    os mapas
 public/                imagens e sons servidos como estão
 ```
+
+## Editando os mapas
+
+Cada mapa em `src/world/maps/` é uma lista de linhas, uma string por linha: `#` é parede e `.` é chão. Todas as linhas precisam ter o mesmo tamanho; o jogo avisa na tela se algo estiver errado. Ninguém nasce em pedaços de chão isolados do resto do mapa.
 
 ## Progresso
 
@@ -61,19 +77,19 @@ public/                imagens e sons servidos como estão
 
 * [x] Class de Personagens
 * [x] Class de Background
-* [ ] Class de Spreadsheet
+* [x] Class de Spreadsheet
 * [x] Class de Teclado
 
 ### Boss
 
-* [ ] 1 - A cada 10 segundos ele anda mais rapido
-* [ ] 2 - 1 + Some e aparece em lugares diferentes
-* [ ] 3 - 2 + Atravessa parede
+* [x] 1 - A cada 10 segundos ele anda mais rapido
+* [x] 2 - 1 + Some e aparece em lugares diferentes
+* [x] 3 - 2 + Atravessa parede
 
 ### Mapas
-* [ ] 1
-* [ ] 2
-* [ ] 3
+* [x] 1
+* [x] 2
+* [x] 3
 
 
 ### V1

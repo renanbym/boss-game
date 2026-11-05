@@ -90,6 +90,7 @@ export class Input {
       this.held.push(direction)
       if (!event.repeat) this.tapped = direction
     }
+    if (event.key === ' ') event.preventDefault() // espaço não rola a página nem clica em botões
     if (!event.repeat) this.pressed.add(event.key.toLowerCase())
   }
 

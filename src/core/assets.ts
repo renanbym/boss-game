@@ -1,9 +1,22 @@
 /** Caminhos das imagens usadas pelo jogo, relativos à pasta `public/`. */
 export const IMAGE_PATHS = {
-  player: 'img/actor.png',
-  villain: 'img/Villager1.png',
+  /** Heróis e bosses: 8 personagens de 3x4 quadros. */
+  actors: 'img/actor.png',
+  /** Lacaios. */
+  villager: 'img/Villager1.png',
   floor: 'img/bgs.png',
   walls: 'img/walls.png',
+  /** Golpe do jogador. */
+  slash: 'img/attack.png',
+  /** Explosão quando um inimigo morre. */
+  burst: 'img/Special3.png',
+  /** Redemoinho do teletransporte. */
+  wind: 'img/Wind2.png',
+} as const
+
+/** Caminhos dos sons, relativos à pasta `public/`. */
+export const SOUND_PATHS = {
+  die: 'sounds/die.mp3',
 } as const
 
 /** Nome de uma imagem conhecida pelo jogo. */
@@ -13,8 +26,17 @@ export type ImageName = keyof typeof IMAGE_PATHS
 export type Images = Record<ImageName, HTMLImageElement>
 
 /**
+ * Monta a URL de um arquivo de `public/`, respeitando o `base` do Vite.
+ * @param path Caminho relativo à pasta `public/`.
+ * @returns URL pronta para usar em `src`.
+ */
+export function assetUrl(path: string): string {
+  return `${import.meta.env.BASE_URL}${path}`
+}
+
+/**
  * Carrega uma imagem.
- * @param src Caminho da imagem.
+ * @param src Caminho relativo à pasta `public/`.
  * @returns Promise resolvida com a imagem pronta para desenhar.
  * @throws Rejeita se a imagem não puder ser carregada.
  */
@@ -23,7 +45,7 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
     const img = new Image()
     img.onload = () => resolve(img)
     img.onerror = () => reject(new Error(`Não foi possível carregar a imagem: ${src}`))
-    img.src = `${import.meta.env.BASE_URL}${src}`
+    img.src = assetUrl(src)
   })
 }
 
@@ -38,4 +60,14 @@ export async function loadImages(): Promise<Images> {
     ),
   )
   return Object.fromEntries(entries) as Images
+}
+
+/**
+ * Toca um som do jogo. Falhas (ex.: navegador bloqueando áudio) são ignoradas.
+ * @param name Nome do som em `SOUND_PATHS`.
+ */
+export function playSound(name: keyof typeof SOUND_PATHS): void {
+  const audio = new Audio(assetUrl(SOUND_PATHS[name]))
+  audio.volume = 0.6
+  audio.play().catch(() => {})
 }
