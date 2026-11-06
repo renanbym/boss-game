@@ -20,6 +20,9 @@ const TELEPORT = { every: 6, minDistance: 6 }
 /** Todos os bosses só levam dano 3s a cada 10s, e piscam enquanto estão vulneráveis. */
 const VULNERABILITY = { every: 10, duration: 3 }
 
+/** Todos os bosses atiram no jogador a cada 5s, mas só enquanto estão protegidos. */
+const SHOOTER = { every: 5 }
+
 /** Lacaio comum: 1 golpe, sem habilidades. Também é o que o botão "Adicionar vilão" cria. */
 export const MINION: EnemyOptions = {
   character: 0,
@@ -39,7 +42,7 @@ export const LEVELS: readonly LevelConfig[] = [
       stepDuration: 0.3,
       hp: 4,
       isBoss: true,
-      abilities: { speedUp: SPEED_UP, vulnerability: VULNERABILITY },
+      abilities: { speedUp: SPEED_UP, vulnerability: VULNERABILITY, shooter: SHOOTER },
     },
     minions: 0,
   },
@@ -51,7 +54,7 @@ export const LEVELS: readonly LevelConfig[] = [
       stepDuration: 0.3,
       hp: 5,
       isBoss: true,
-      abilities: { speedUp: SPEED_UP, teleport: TELEPORT, vulnerability: VULNERABILITY },
+      abilities: { speedUp: SPEED_UP, teleport: TELEPORT, vulnerability: VULNERABILITY, shooter: SHOOTER },
     },
     minions: 1,
   },
@@ -63,7 +66,7 @@ export const LEVELS: readonly LevelConfig[] = [
       stepDuration: 0.3,
       hp: 6,
       isBoss: true,
-      abilities: { speedUp: SPEED_UP, teleport: TELEPORT, ghost: true, vulnerability: VULNERABILITY },
+      abilities: { speedUp: SPEED_UP, teleport: TELEPORT, ghost: true, vulnerability: VULNERABILITY, shooter: SHOOTER },
     },
     minions: 2,
   },

@@ -15,6 +15,7 @@ export class Grid implements Walkable {
    */
   readonly ghostGrid: Walkable
   private readonly walls: boolean[][]
+  private readonly trees: boolean[][]
   /** Casas livres da maior região conectada: só nelas alguém pode nascer. */
   private readonly spawnable: Point[]
 
@@ -24,6 +25,7 @@ export class Grid implements Walkable {
   constructor(map: LevelMap) {
     this.name = map.name
     this.walls = map.walls
+    this.trees = map.trees
     this.height = map.walls.length
     this.width = map.walls[0]?.length ?? 0
     this.ghostGrid = {
@@ -55,6 +57,25 @@ export class Grid implements Walkable {
    */
   isWalkable(x: number, y: number): boolean {
     return this.walls[y]?.[x] === false
+  }
+
+  /**
+   * @param x Coluna.
+   * @param y Linha.
+   * @returns true se há uma árvore na casa.
+   */
+  isTree(x: number, y: number): boolean {
+    return this.trees[y]?.[x] === true
+  }
+
+  /**
+   * Lista as casas com árvore.
+   * @returns Casas com árvore, de cima para baixo.
+   */
+  treeTiles(): Point[] {
+    const tiles: Point[] = []
+    this.trees.forEach((row, y) => row.forEach((tree, x) => tree && tiles.push({ x, y })))
+    return tiles
   }
 
   /**

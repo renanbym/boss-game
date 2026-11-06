@@ -1,7 +1,7 @@
 import { SpriteEffect, type EffectSheet } from '../effects/SpriteEffect'
-import { Enemy, type EnemyOptions } from '../entities/Enemy'
+import { Enemy, type EnemyEvent, type EnemyOptions } from '../entities/Enemy'
 import { Player, PLAYER_SETTINGS } from '../entities/Player'
-import { PROJECTILE_SETTINGS, type Projectile } from '../entities/Projectile'
+import { Projectile } from '../entities/Projectile'
 import type { Point } from '../world/Pathfinding'
 import { TileMap } from '../world/TileMap'
 import { playSound, type Images } from './assets'
@@ -18,6 +18,17 @@ import { LEVELS, MINION, type LevelConfig } from './levels'
  * - `victory`: venceu o boss da última fase.
  */
 export type GameState = 'menu' | 'intro' | 'playing' | 'paused' | 'gameover' | 'victory'
+
+/** Algo desenhado na cena ordenado pela altura (personagens e árvores). */
+interface Drawable {
+  readonly position: Point
+  /**
+   * Desenha o objeto.
+   * @param ctx Contexto onde desenhar.
+   * @param tileSize Tamanho de cada casa, em pixels.
+   */
+  render(ctx: CanvasRenderingContext2D, tileSize: number): void
+}
 
 /** Ajustes gerais de jogabilidade. */
 export const SETTINGS = {
@@ -42,7 +53,7 @@ export class Game {
   player: Player | null = null
   enemies: Enemy[] = []
   effects: SpriteEffect[] = []
-  /** Poderes lançados pelo jogador que ainda estão voando. */
+  /** Projéteis no ar: poderes do jogador e tiros do boss. */
   projectiles: Projectile[] = []
   /** Tempo na fase atual, em segundos. */
   levelTime = 0
@@ -235,34 +246,37 @@ export class Game {
 
     for (const enemy of this.enemies) {
       enemy.step(dt, this.map)
-      for (const event of enemy.takeEvents()) this.showTeleport(event.from, event.to)
+      this.handleEvents(enemy.takeEvents())
     }
 
-    this.updateProjectiles(dt)
-    if (this.state !== 'playing') return // o boss pode ter sido derrotado agora
+    this.updateProjectiles(dt, player)
+    if (this.state !== 'playing') return // o boss pode ter sido derrotado, ou o jogador abatido, agora
     this.checkCaught(player)
   }
 
   /**
-   * Move os poderes lançados. O primeiro inimigo no caminho recebe o golpe;
-   * se ele estiver protegido (boss fora da janela ou atordoado), o golpe é bloqueado.
-   * @param dt Tempo desde o último frame, em segundos.
+   * Reage ao que os inimigos fizeram neste frame: mostra teletransportes e cria os tiros.
+   * @param events Eventos de um inimigo.
    */
-  private updateProjectiles(dt: number): void {
-    for (const projectile of this.projectiles) {
-      let target: Enemy | undefined
-      projectile.advance(dt, this.map, (position) => {
-        target = this.enemies.find((e) => e.alive && e.distanceToPoint(position) < PROJECTILE_SETTINGS.hitDistance)
-        return target !== undefined
-      })
+  private handleEvents(events: EnemyEvent[]): void {
+    for (const event of events) {
+      if (event.type === 'teleport') this.showTeleport(event.from, event.to)
+      else this.projectiles.push(new Projectile(event.from, event.direction, 'boss'))
+    }
+  }
 
-      if (projectile.end === 'hit' && target) {
-        const damaged = target.hurt(projectile.direction, this.map)
-        this.showImpact(projectile.position, damaged)
-        if (damaged && !target.alive) this.onEnemyKilled(target)
-      } else if (projectile.end === 'wall') {
-        this.showImpact(projectile.position, false)
-      }
+  /**
+   * Move os projéteis.
+   * - Poder do jogador: o primeiro inimigo no caminho recebe o golpe; se estiver protegido
+   *   (boss fora da janela ou atordoado), o golpe é bloqueado.
+   * - Tiro do boss: tira uma vida do jogador, a não ser que ele esteja invulnerável (aí passa direto).
+   * @param dt Tempo desde o último frame, em segundos.
+   * @param player Jogador.
+   */
+  private updateProjectiles(dt: number, player: Player): void {
+    for (const projectile of this.projectiles) {
+      if (projectile.kind === 'boss') this.updateBossShot(dt, projectile, player)
+      else this.updatePlayerShot(dt, projectile)
     }
 
     this.projectiles = this.projectiles.filter((p) => p.isFlying)
@@ -270,8 +284,55 @@ export class Game {
   }
 
   /**
-   * Mostra o impacto do poder.
-   * @param position Onde o poder parou, em unidades de casa.
+   * Avança um poder do jogador e aplica o golpe no primeiro inimigo atingido.
+   * @param dt Tempo desde o último frame, em segundos.
+   * @param projectile Poder do jogador.
+   */
+  private updatePlayerShot(dt: number, projectile: Projectile): void {
+    let target: Enemy | undefined
+    projectile.advance(dt, this.map, (position) => {
+      target = this.enemies.find((e) => e.alive && e.distanceToPoint(position) < projectile.settings.hitDistance)
+      return target !== undefined
+    })
+
+    if (projectile.end === 'hit' && target) {
+      const damaged = target.hurt(projectile.direction, this.map)
+      this.showImpact(projectile.position, damaged)
+      if (damaged && !target.alive) this.onEnemyKilled(target)
+    } else if (projectile.end === 'wall') {
+      this.showImpact(projectile.position, false)
+    }
+  }
+
+  /**
+   * Avança um tiro do boss e tira uma vida do jogador se acertar.
+   * @param dt Tempo desde o último frame, em segundos.
+   * @param projectile Tiro do boss.
+   * @param player Jogador.
+   */
+  private updateBossShot(dt: number, projectile: Projectile, player: Player): void {
+    projectile.advance(
+      dt,
+      this.map,
+      (position) =>
+        player.alive && !player.isInvulnerable && player.distanceToPoint(position) < projectile.settings.hitDistance,
+    )
+
+    if (projectile.end === 'hit') {
+      this.showImpact(projectile.position, true)
+      player.hurt()
+      if (!player.alive) {
+        this.state = 'gameover'
+        playSound('die')
+      }
+    } else if (projectile.end === 'wall') {
+      this.showImpact(projectile.position, false)
+    }
+  }
+
+  /**
+   * Mostra o impacto de um projétil.
+   * @param position Onde o projétil parou, em unidades de casa.
    * @param damaged true se tirou vida (explosão); false se foi bloqueado ou bateu na parede (faísca).
    */
   private showImpact(position: Point, damaged: boolean): void {
@@ -342,7 +403,7 @@ export class Game {
       return
     }
     catcher.teleportAway(this.map, SETTINGS.spawnDistance)
-    for (const event of catcher.takeEvents()) this.showTeleport(event.from, event.to)
+    this.handleEvents(catcher.takeEvents())
   }
 
   /**
@@ -363,10 +424,13 @@ export class Game {
     map.render(ctx)
 
     // Quem está mais embaixo é desenhado por último, para sobrepor quem está atrás
-    const entities = [...this.enemies, ...(this.player && this.state !== 'intro' ? [this.player] : [])].sort(
-      (a, b) => a.position.y - b.position.y,
-    )
-    for (const entity of entities) entity.render(ctx, map.tileSize)
+    // Árvores entram na mesma ordenação: quem passa atrás de uma árvore fica coberto pela copa
+    const drawables: Drawable[] = [
+      ...map.treeSprites,
+      ...this.enemies,
+      ...(this.player && this.state !== 'intro' ? [this.player] : []),
+    ].sort((a, b) => a.position.y - b.position.y)
+    for (const drawable of drawables) drawable.render(ctx, map.tileSize)
     for (const projectile of this.projectiles) projectile.render(ctx, map.tileSize)
     for (const effect of this.effects) effect.render(ctx, map.tileSize)
 
@@ -379,6 +443,7 @@ export class Game {
           [
             'Derrote o boss de cada fase sem perder as 3 vidas.',
             'O boss só leva dano quando pisca: 3s a cada 10s.',
+            'Protegido, ele atira em você a cada 5s.',
             'Setas/WASD: andar   ·   Espaço: lançar poder   ·   P: pausar',
           ],
           'Enter para começar',

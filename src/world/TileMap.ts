@@ -1,6 +1,7 @@
 import type { Images } from '../core/assets'
 import { Grid } from './Grid'
 import type { LevelMap } from './maps'
+import { Tree } from './Tree'
 
 /** Tamanho de cada tile nas spritesheets de cenário, em pixels. */
 const SOURCE_TILE = 48
@@ -8,9 +9,12 @@ const SOURCE_TILE = 48
 /**
  * Mapa do jogo na tela: a lógica do `Grid` mais o desenho do cenário.
  *
- * O cenário é desenhado uma única vez num canvas fora da tela e só copiado a cada frame.
+ * O cenário (chão e paredes) é desenhado uma única vez num canvas fora da tela e só copiado
+ * a cada frame. As árvores ficam de fora: o jogo as desenha junto com os personagens.
  */
 export class TileMap extends Grid {
+  /** Árvores do mapa, para o jogo desenhar ordenadas com os personagens. */
+  readonly treeSprites: Tree[]
   private readonly background: HTMLCanvasElement
 
   /**
@@ -25,6 +29,7 @@ export class TileMap extends Grid {
   ) {
     super(map)
     this.background = this.prerender(images)
+    this.treeSprites = this.treeTiles().map((tile) => new Tree(tile, images.walls))
   }
 
   /** Largura do mapa, em pixels. */
@@ -46,7 +51,7 @@ export class TileMap extends Grid {
   }
 
   /**
-   * Desenha chão e paredes num canvas fora da tela.
+   * Desenha chão e paredes num canvas fora da tela (casas com árvore ficam só com o chão).
    * @param images Imagens do cenário.
    * @returns Canvas com o cenário completo.
    */
@@ -62,7 +67,7 @@ export class TileMap extends Grid {
       for (let x = 0; x < this.width; x++) {
         ctx.drawImage(images.floor, 0, SOURCE_TILE, SOURCE_TILE, SOURCE_TILE, x * s, y * s, s, s)
 
-        if (!this.isWalkable(x, y)) {
+        if (!this.isWalkable(x, y) && !this.isTree(x, y)) {
           // Duas variações de parede para o labirinto não ficar repetitivo
           const column = Math.random() < 0.3 ? 10 : 9
           ctx.drawImage(

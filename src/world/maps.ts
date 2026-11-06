@@ -6,15 +6,17 @@ import level3 from './maps/level3.json'
 export interface MapFile {
   /** Nome mostrado na tela. */
   name: string
-  /** Uma string por linha: `#` = parede, `.` = chão. */
+  /** Uma string por linha: `#` = parede, `T` = árvore, `.` = chão. */
   tiles: string[]
 }
 
 /** Mapa já interpretado. */
 export interface LevelMap {
   name: string
-  /** `walls[y][x]` é true onde há parede. */
+  /** `walls[y][x]` é true onde não dá para passar (parede ou árvore). */
   walls: boolean[][]
+  /** `trees[y][x]` é true onde há árvore. Árvores também contam como `walls`. */
+  trees: boolean[][]
 }
 
 /**
@@ -27,17 +29,23 @@ export function parseMap(file: MapFile): LevelMap {
   const width = file.tiles[0]?.length ?? 0
   if (width === 0) throw new Error(`Mapa "${file.name}" está vazio`)
 
-  const walls = file.tiles.map((row, y) => {
+  const cells = file.tiles.map((row, y) => {
     if (row.length !== width) {
       throw new Error(`Mapa "${file.name}": a linha ${y} tem ${row.length} casas, esperado ${width}`)
     }
     return [...row].map((char, x) => {
-      if (char === '#') return true
-      if (char === '.') return false
-      throw new Error(`Mapa "${file.name}": caractere "${char}" desconhecido em (${x}, ${y})`)
+      if (char !== '#' && char !== 'T' && char !== '.') {
+        throw new Error(`Mapa "${file.name}": caractere "${char}" desconhecido em (${x}, ${y})`)
+      }
+      return char
     })
   })
-  return { name: file.name, walls }
+
+  return {
+    name: file.name,
+    walls: cells.map((row) => row.map((char) => char !== '.')),
+    trees: cells.map((row) => row.map((char) => char === 'T')),
+  }
 }
 
 /** Mapas das fases, na ordem. */

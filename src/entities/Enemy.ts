@@ -32,6 +32,14 @@ export interface Abilities {
     /** Quanto tempo cada janela fica aberta, em segundos. */
     duration: number
   }
+  /**
+   * Atira no alvo de tempos em tempos, só enquanto está protegido (fora da janela de vulnerabilidade).
+   * Se o tempo vencer durante a janela, o tiro espera a janela fechar.
+   */
+  shooter?: {
+    /** Intervalo mínimo entre dois tiros, em segundos. */
+    every: number
+  }
 }
 
 /** Configuração de um inimigo. */
@@ -48,7 +56,8 @@ export interface EnemyOptions {
 }
 
 /** Algo que aconteceu com o inimigo neste frame e que o jogo precisa mostrar. */
-export type EnemyEvent = { type: 'teleport'; from: Point; to: Point }
+export type EnemyEvent =
+  { type: 'teleport'; from: Point; to: Point } | { type: 'shoot'; from: Point; direction: Direction }
 
 /** Tempo atordoado depois de levar um golpe, em segundos. */
 const STUN_TIME = 0.6
@@ -71,6 +80,7 @@ export class Enemy extends Entity {
   private teleportTimer = 0
   /** Tempo de vida do inimigo, usado para calcular as janelas de vulnerabilidade. */
   private age = 0
+  private shootTimer = 0
   private path: Point[] = []
   private pathGoal: Point | null = null
 
@@ -186,12 +196,12 @@ export class Enemy extends Entity {
   }
 
   /**
-   * Aplica aceleração e teletransporte conforme os timers.
+   * Aplica aceleração, teletransporte e tiro conforme os timers.
    * @param dt Tempo desde o último frame, em segundos.
    * @param map Mapa da fase.
    */
   private updateAbilities(dt: number, map: Grid): void {
-    const { speedUp, teleport } = this.abilities
+    const { speedUp, teleport, shooter } = this.abilities
 
     if (speedUp) {
       this.speedTimer += dt
@@ -207,6 +217,18 @@ export class Enemy extends Entity {
       if (this.teleportTimer >= teleport.every && !this.isMoving && !this.isStunned) {
         this.teleportTimer = 0
         this.teleportAway(map, teleport.minDistance)
+      }
+    }
+
+    if (shooter) {
+      this.shootTimer += dt
+      // Durante a janela de vulnerabilidade ele não atira (quem não tem janela atira sempre)
+      const windowOpen = !!this.abilities.vulnerability && this.isVulnerable
+      const canShoot = !windowOpen && !this.isStunned && this.alive && this.target.alive
+      if (this.shootTimer >= shooter.every && canShoot) {
+        this.shootTimer = 0
+        this.facing = directionTowards(this.position, this.target.position)
+        this.events.push({ type: 'shoot', from: this.position, direction: this.facing })
       }
     }
   }
@@ -258,6 +280,19 @@ export class Enemy extends Entity {
  */
 function samePoint(a: Point, b: Point): boolean {
   return a.x === b.x && a.y === b.y
+}
+
+/**
+ * Direção (sem diagonal) que mais aproxima de um ponto: o eixo com a maior diferença vence.
+ * @param from Ponto de origem.
+ * @param to Ponto de destino.
+ * @returns A direção.
+ */
+export function directionTowards(from: Point, to: Point): Direction {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? 'right' : 'left'
+  return dy >= 0 ? 'down' : 'up'
 }
 
 /**

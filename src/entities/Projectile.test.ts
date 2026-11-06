@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { gridFrom, simulate } from '../test/helpers'
 import type { Point } from '../world/Pathfinding'
-import { Projectile, PROJECTILE_SETTINGS } from './Projectile'
+import { BOSS_SHOT_SETTINGS, Projectile, PROJECTILE_SETTINGS } from './Projectile'
 
 const neverHits = () => false
 
@@ -69,5 +69,23 @@ describe('Projectile', () => {
     const final = { ...shot.position }
     shot.advance(1, open, neverHits)
     expect(shot.position).toEqual(final)
+  })
+
+  it('para ao bater numa árvore', () => {
+    const grid = gridFrom('...T......')
+    const shot = new Projectile({ x: 1, y: 0 }, 'right')
+    simulate(1, (dt) => shot.advance(dt, grid, neverHits))
+    expect(shot.end).toBe('wall')
+  })
+
+  it('o tiro do boss usa a velocidade e o alcance dele', () => {
+    const shot = new Projectile({ x: 0, y: 0 }, 'right', 'boss')
+    expect(shot.kind).toBe('boss')
+    expect(shot.settings).toBe(BOSS_SHOT_SETTINGS)
+    expect(BOSS_SHOT_SETTINGS.speed).toBeLessThan(PROJECTILE_SETTINGS.speed)
+
+    simulate(3, (dt) => shot.advance(dt, open, neverHits))
+    expect(shot.end).toBe('range')
+    expect(shot.position.x).toBeCloseTo(BOSS_SHOT_SETTINGS.range)
   })
 })

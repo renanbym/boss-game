@@ -18,6 +18,12 @@ describe('parseMap', () => {
     expect(() => parseMap({ name: 'm', tiles: ['...', '..'] })).toThrow(/linha 1/)
   })
 
+  it('árvore (T) bloqueia a passagem e fica marcada como árvore', () => {
+    const map = parseMap({ name: 'm', tiles: ['.T#'] })
+    expect(map.walls).toEqual([[false, true, true]])
+    expect(map.trees).toEqual([[false, true, false]])
+  })
+
   it('recusa caracteres desconhecidos', () => {
     expect(() => parseMap({ name: 'm', tiles: ['.x.'] })).toThrow(/"x"/)
   })
@@ -31,5 +37,9 @@ describe('mapas do jogo', () => {
   it.each(MAPS.map((m) => [m.name, m] as const))('%s: todo o chão é alcançável', (_name, map) => {
     const grid = new Grid(map)
     expect(grid.spawnableCount).toBe(grid.countFloor())
+  })
+
+  it.each(MAPS.map((m) => [m.name, m] as const))('%s: tem árvores', (_name, map) => {
+    expect(map.trees.flat().filter(Boolean).length).toBeGreaterThan(0)
   })
 })

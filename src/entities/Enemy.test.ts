@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { FAKE_LOOK, gridFrom, simulate } from '../test/helpers'
 import { manhattan, type Point } from '../world/Pathfinding'
-import { Enemy, type Abilities, type EnemyOptions } from './Enemy'
+import { directionTowards, Enemy, type Abilities, type EnemyEvent, type EnemyOptions } from './Enemy'
 import { Entity } from './Entity'
 
 /**
@@ -194,10 +194,79 @@ describe('Enemy', () => {
     simulate(0.2, (dt) => enemy.step(dt, grid))
     const events = enemy.takeEvents()
     expect(events).toHaveLength(1)
-    const to = events[0]!.to
+    const event = events[0]!
+    if (event.type !== 'teleport') throw new Error('esperava um teletransporte')
+    const to = event.to
     expect(manhattan(to, target.tile)).toBeGreaterThanOrEqual(8)
     // Depois de reaparecer ele volta a perseguir, então pode já ter dado um ou dois passos
     expect(manhattan(enemy.tile, to)).toBeLessThanOrEqual(2)
     expect(enemy.takeEvents()).toEqual([])
+  })
+
+  describe('tiro do boss', () => {
+    const grid = gridFrom('..........', '..........', '..........')
+    const shooter = { every: 5 }
+    const vulnerability = { every: 10, duration: 3 }
+
+    /**
+     * Junta os tiros disparados enquanto a simulação roda.
+     * @param enemy Inimigo observado.
+     * @param seconds Quanto tempo simular.
+     * @returns Instantes (em segundos) e eventos de cada tiro.
+     */
+    function collectShots(enemy: Enemy, seconds: number) {
+      const shots: { at: number; event: EnemyEvent }[] = []
+      let time = 0
+      simulate(seconds, (dt) => {
+        enemy.step(dt, grid)
+        time += dt
+        for (const event of enemy.takeEvents()) if (event.type === 'shoot') shots.push({ at: time, event })
+      })
+      return shots
+    }
+
+    it('atira a cada 5 segundos', () => {
+      const target = new Entity(FAKE_LOOK, { x: 9, y: 0 }, 0.1)
+      const boss = new Enemy(FAKE_LOOK, { x: 0, y: 0 }, options({ stepDuration: 999, abilities: { shooter } }), target)
+      const shots = collectShots(boss, 16)
+      expect(shots.map((s) => Math.round(s.at))).toEqual([5, 10, 15])
+    })
+
+    it('não atira enquanto está vulnerável; o tiro espera a janela fechar', () => {
+      const target = new Entity(FAKE_LOOK, { x: 9, y: 0 }, 0.1)
+      const abilities = { shooter, vulnerability }
+      const boss = new Enemy(FAKE_LOOK, { x: 0, y: 0 }, options({ stepDuration: 999, abilities }), target)
+      const shots = collectShots(boss, 21)
+      // 5s: protegido, atira. 10s: vulnerável (10–13s), espera até 13s. 18s: protegido, atira.
+      expect(shots.map((s) => Math.round(s.at))).toEqual([5, 13, 18])
+      for (const shot of shots) {
+        const at = shot.at
+        expect(at >= 10 && at < 13).toBe(false)
+      }
+    })
+
+    it('mira na direção do alvo e vira para ele', () => {
+      const target = new Entity(FAKE_LOOK, { x: 2, y: 2 }, 0.1)
+      const boss = new Enemy(FAKE_LOOK, { x: 2, y: 0 }, options({ stepDuration: 999, abilities: { shooter } }), target)
+      const [shot] = collectShots(boss, 5.1)
+      expect(shot?.event).toMatchObject({ type: 'shoot', direction: 'down' })
+      expect(boss.facing).toBe('down')
+    })
+
+    it('não atira atordoado nem depois que o alvo morreu', () => {
+      const target = new Entity(FAKE_LOOK, { x: 9, y: 0 }, 0.1)
+      const boss = new Enemy(FAKE_LOOK, { x: 0, y: 0 }, options({ stepDuration: 999, abilities: { shooter } }), target)
+      target.die()
+      expect(collectShots(boss, 6)).toEqual([])
+    })
+  })
+
+  describe('directionTowards', () => {
+    it('escolhe o eixo com a maior diferença', () => {
+      expect(directionTowards({ x: 0, y: 0 }, { x: 5, y: 2 })).toBe('right')
+      expect(directionTowards({ x: 0, y: 0 }, { x: -5, y: 2 })).toBe('left')
+      expect(directionTowards({ x: 0, y: 0 }, { x: 1, y: 4 })).toBe('down')
+      expect(directionTowards({ x: 0, y: 0 }, { x: 1, y: -4 })).toBe('up')
+    })
   })
 })

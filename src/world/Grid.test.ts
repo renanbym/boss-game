@@ -63,4 +63,13 @@ describe('Grid', () => {
   it('falha quando não há chão', () => {
     expect(() => gridFrom('###').randomFreeTile()).toThrow(/não tem casas livres/)
   })
+
+  it('árvores bloqueiam o caminho, mas o fantasma passa por elas', () => {
+    const forest = gridFrom('.T.', '...')
+    expect(forest.isWalkable(1, 0)).toBe(false)
+    expect(forest.isTree(1, 0)).toBe(true)
+    expect(forest.isTree(0, 0)).toBe(false)
+    expect(forest.ghostGrid.isWalkable(1, 0)).toBe(true)
+    expect(forest.treeTiles()).toEqual([{ x: 1, y: 0 }])
+  })
 })

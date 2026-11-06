@@ -12,6 +12,10 @@ Você tem 3 vidas para o jogo todo. Ao ser pego, perde uma, fica invulnerável p
 
 **O boss só leva dano quando pisca.** A cada 10 segundos ele fica vulnerável por 3 segundos (aos 10s, 20s, 30s…). Fora dessa janela o poder é bloqueado. A barra do boss mostra quanto falta para abrir ou fechar. Os lacaios levam dano a qualquer momento.
 
+**Protegido, o boss atira em você.** Um tiro a cada 5 segundos, na sua direção, mas nunca durante a janela de vulnerabilidade (se o tempo vencer com a janela aberta, ele espera ela fechar). O tiro é vermelho, mais lento que o seu poder, alcança 7 casas, para em paredes e árvores e tira uma vida se acertar.
+
+**Árvores** bloqueiam a passagem e os tiros, como as paredes. Só o boss da fase 3, que atravessa paredes, passa por elas.
+
 ## Como rodar
 
 Precisa do Node.js 22.12 ou mais novo.
@@ -59,10 +63,11 @@ src/
   core/assets.ts       carregamento de imagens e sons
   entities/Entity.ts   personagem que anda casa a casa com movimento suave
   entities/Player.ts   jogador: vidas, lançar o poder, invulnerabilidade
-  entities/Projectile.ts  o poder: voo em linha reta, alcance e colisão
+  entities/Projectile.ts  poder do jogador e tiro do boss: voo em linha reta, alcance e colisão
   entities/Enemy.ts    boss e lacaios: perseguição, habilidades e janela de vulnerabilidade
   effects/SpriteEffect.ts  animações de golpe, explosão e teletransporte
-  world/Grid.ts        lógica do mapa: colisão, regiões e sorteio de casas
+  world/Grid.ts        lógica do mapa: colisão, árvores, regiões e sorteio de casas
+  world/Tree.ts        desenho das árvores
   world/TileMap.ts     Grid + desenho do cenário
   world/Pathfinding.ts A* no grid
   world/maps.ts        leitura e validação dos mapas
@@ -72,7 +77,7 @@ public/                imagens e sons servidos como estão
 
 ## Editando os mapas
 
-Cada mapa em `src/world/maps/` é uma lista de linhas, uma string por linha: `#` é parede e `.` é chão. Todas as linhas precisam ter o mesmo tamanho; o jogo avisa na tela se algo estiver errado. Ninguém nasce em pedaços de chão isolados do resto do mapa.
+Cada mapa em `src/world/maps/` é uma lista de linhas, uma string por linha: `#` é parede, `T` é árvore e `.` é chão. Todas as linhas precisam ter o mesmo tamanho; o jogo avisa na tela se algo estiver errado. Ninguém nasce em pedaços de chão isolados do resto do mapa.
 
 ## Progresso
 
