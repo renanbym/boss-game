@@ -1,4 +1,5 @@
 import { loadImages } from './core/assets'
+import { AudioManager } from './core/audio'
 import { Game } from './core/Game'
 import { Input } from './core/Input'
 import './style.css'
@@ -21,7 +22,13 @@ async function bootstrap(): Promise<void> {
   const addVillain = requireElement<HTMLButtonElement>('#add-villain')
 
   const images = await loadImages()
-  const game = new Game(canvas, images, new Input())
+  const sound = new AudioManager()
+  // Navegadores só liberam áudio depois de uma interação: libera na primeira tecla ou clique
+  const unlock = () => sound.unlock()
+  window.addEventListener('keydown', unlock, { once: true })
+  window.addEventListener('pointerdown', unlock, { once: true })
+
+  const game = new Game(canvas, images, new Input(), sound)
 
   addVillain.addEventListener('click', () => {
     game.addMinion()

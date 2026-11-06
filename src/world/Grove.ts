@@ -4,7 +4,7 @@ import type { Point } from './Pathfinding'
  * Fase do ciclo de uma árvore.
  * - `solid`: está no mapa e bloqueia passagem e tiros.
  * - `gone`: sumiu; a casa fica livre.
- * - `warning`: vai reaparecer; pisca, mas ainda não bloqueia.
+ * - `warning`: vai reaparecer (já no lugar novo); pisca, mas ainda não bloqueia.
  */
 export type TreePhase = 'solid' | 'gone' | 'warning'
 
@@ -18,15 +18,24 @@ export const TREE_CYCLE = {
 
 /** Estado de uma árvore. */
 export interface TreeState {
-  readonly tile: Point
+  /** Casa onde a árvore está (ou onde vai aparecer, quando `warning`). */
+  tile: Point
   phase: TreePhase
   /** Segundos que faltam para a fase atual acabar. */
   timeLeft: number
 }
 
 /**
- * Controla o ciclo das árvores: ficam sólidas, somem e, antes de reaparecer,
- * piscam por `TREE_CYCLE.warning` segundos.
+ * Escolhe onde uma árvore vai reaparecer.
+ * @param tree Árvore que vai reaparecer.
+ * @param isOccupied Diz se há alguém numa casa.
+ * @returns A casa nova, ou null para reaparecer no mesmo lugar.
+ */
+export type ChooseSpot = (tree: TreeState, isOccupied: (tile: Point) => boolean) => Point | null
+
+/**
+ * Controla o ciclo das árvores: ficam sólidas, somem e reaparecem num lugar sorteado,
+ * piscando por `TREE_CYCLE.warning` segundos no lugar novo antes de bloquear.
  *
  * Uma árvore só reaparece se a casa estiver livre; se houver alguém em cima,
  * ela continua piscando até a casa vagar (para ninguém ficar preso dentro dela).
@@ -36,12 +45,17 @@ export class Grove {
   private readonly byKey = new Map<string, TreeState>()
 
   /**
-   * Todas começam sólidas, como o mapa foi desenhado, mas com tempos diferentes
+   * Todas começam sólidas, onde o mapa mandou, mas com tempos diferentes
    * para não sumirem todas juntas.
-   * @param tiles Casas com árvore.
+   * @param tiles Casas iniciais das árvores.
    * @param random Gerador de números em [0, 1). Trocável nos testes.
+   * @param chooseSpot Escolhe o lugar de cada reaparição; sem ele, a árvore volta para o mesmo lugar.
    */
-  constructor(tiles: Point[], random: () => number = Math.random) {
+  constructor(
+    tiles: Point[],
+    random: () => number = Math.random,
+    private readonly chooseSpot?: ChooseSpot,
+  ) {
     this.trees = tiles.map((tile) => ({
       tile: { ...tile },
       phase: 'solid' as TreePhase,
@@ -82,6 +96,9 @@ export class Grove {
           tree.phase = 'gone'
           tree.timeLeft += TREE_CYCLE.gone
         } else if (tree.phase === 'gone') {
+          // Escolhe o lugar novo já no aviso, para o jogador ver onde ela vai surgir
+          const spot = this.chooseSpot?.(tree, isOccupied)
+          if (spot) this.move(tree, spot)
           tree.phase = 'warning'
           tree.timeLeft += TREE_CYCLE.warning
         } else if (isOccupied(tree.tile)) {
@@ -94,6 +111,18 @@ export class Grove {
         }
       }
     }
+  }
+
+  /**
+   * Muda a árvore de casa, mantendo o índice por casa em dia.
+   * @param tree Árvore.
+   * @param tile Casa nova.
+   */
+  private move(tree: TreeState, tile: Point): void {
+    const oldKey = key(tree.tile.x, tree.tile.y)
+    if (this.byKey.get(oldKey) === tree) this.byKey.delete(oldKey)
+    tree.tile = { ...tile }
+    this.byKey.set(key(tile.x, tile.y), tree)
   }
 }
 

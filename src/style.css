@@ -2,9 +2,10 @@ html,
 body {
   margin: 0;
   height: 100%;
-  background: #262626;
+  /* Fundo escuro e quente, no clima de masmorra */
+  background: radial-gradient(ellipse at center, #1c130c 0%, #0b0705 70%);
   overflow: hidden;
-  font-family: system-ui, sans-serif;
+  font-family: Georgia, 'Times New Roman', serif;
 }
 
 body {
@@ -23,6 +24,7 @@ body {
   width: min(100vw, calc(100vh * var(--aspect, 1)));
   height: auto;
   image-rendering: pixelated;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
 }
 
 .control {
@@ -32,10 +34,21 @@ body {
 }
 
 .control button {
-  height: 50px;
-  padding: 0 16px;
-  font-size: 16px;
+  height: 44px;
+  padding: 0 18px;
+  font:
+    bold 16px Georgia,
+    'Times New Roman',
+    serif;
+  color: #ecdcb4;
+  background: rgba(28, 18, 10, 0.92);
+  border: 2px solid #b08d57;
+  box-shadow: inset 0 0 0 2px #5a4128;
   cursor: pointer;
+}
+
+.control button:hover {
+  color: #e3b04b;
 }
 
 .error {

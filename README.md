@@ -14,7 +14,9 @@ Você tem 3 vidas para o jogo todo. Ao ser pego, perde uma, fica invulnerável p
 
 **Protegido, o boss atira em você.** Um tiro a cada 5 segundos, na sua direção, mas nunca durante a janela de vulnerabilidade (se o tempo vencer com a janela aberta, ele espera ela fechar). O tiro é vermelho, mais lento que o seu poder, alcança 7 casas, para em paredes e árvores e tira uma vida se acertar.
 
-**Árvores aparecem e somem.** Cada uma fica 8 segundos no mapa, some por 6 segundos e, antes de voltar, **pisca por 2 segundos** como aviso. Enquanto está no mapa, bloqueia a passagem e os tiros como uma parede; sumida ou piscando, dá para passar. Elas não reaparecem em cima de ninguém: se houver alguém na casa, a árvore continua piscando até a casa vagar. Os tempos são desencontrados, então as árvores não somem todas juntas. Só o boss da fase 3, que atravessa paredes, ignora as árvores.
+**Árvores aparecem e somem em lugares diferentes.** Cada uma fica 8 segundos no mapa, some por 6 segundos e reaparece numa casa sorteada. Antes de voltar, **pisca por 2 segundos já no lugar novo**, então dá para ver onde ela vai surgir. Enquanto está no mapa, bloqueia a passagem e os tiros; sumida ou piscando, dá para passar. O sorteio só escolhe áreas abertas, longe de outras árvores, e nunca fecha caminhos (nenhuma área fica isolada). Elas também não reaparecem em cima de ninguém: se houver alguém na casa, a árvore continua piscando até a casa vagar. Só o boss da fase 3, que atravessa paredes, ignora as árvores.
+
+**Visual e som.** O cenário tem clima de masmorra: piso de pedra, muros com musgo, escuridão com luz de tocha ao redor do personagem e painéis com moldura dourada. A música de fundo e os efeitos sonoros (poder, tiro do boss, acerto e golpe bloqueado) são sintetizados no navegador, sem arquivos de áudio.
 
 ## Como rodar
 
@@ -50,6 +52,7 @@ Abra http://localhost:5173.
 - **Espaço**: lançar o poder. Ele sai da mão do personagem, voa em linha reta na direção em que você está olhando e alcança no máximo 3 casas. Para no primeiro inimigo ou parede; o inimigo atingido fica atordoado e é empurrado
 - **Enter**: começar / avançar / jogar de novo
 - **P**: pausar
+- **M**: liga/desliga o som (a escolha fica salva)
 - **Adicionar vilão** (botão): coloca mais um lacaio no mapa
 
 ## Estrutura
@@ -61,14 +64,16 @@ src/
   core/levels.ts       configuração das fases (mapa, boss, lacaios)
   core/Input.ts        estado do teclado
   core/assets.ts       carregamento de imagens e sons
+  core/audio.ts        música e efeitos sintetizados (Web Audio)
   entities/Entity.ts   personagem que anda casa a casa com movimento suave
   entities/Player.ts   jogador: vidas, lançar o poder, invulnerabilidade
   entities/Projectile.ts  poder do jogador e tiro do boss: voo em linha reta, alcance e colisão
   entities/Enemy.ts    boss e lacaios: perseguição, habilidades e janela de vulnerabilidade
   effects/SpriteEffect.ts  animações de golpe, explosão e teletransporte
   world/Grid.ts        lógica do mapa: colisão, árvores, regiões e sorteio de casas
-  world/Grove.ts       ciclo das árvores: sólida, sumida e piscando
+  world/Grove.ts       ciclo das árvores: sólida, sumida e piscando no lugar novo
   world/Tree.ts        desenho das árvores
+  render/Lighting.ts   escuridão, luz de tocha e vinheta
   world/TileMap.ts     Grid + desenho do cenário
   world/Pathfinding.ts A* no grid
   world/maps.ts        leitura e validação dos mapas

@@ -4,7 +4,9 @@ import { Player, PLAYER_SETTINGS } from '../entities/Player'
 import { Projectile } from '../entities/Projectile'
 import type { Point } from '../world/Pathfinding'
 import { TileMap } from '../world/TileMap'
+import { Lighting, type Light } from '../render/Lighting'
 import { playSound, type Images } from './assets'
+import { SILENT, type Sound } from './audio'
 import type { Input } from './Input'
 import { LEVELS, MINION, type LevelConfig } from './levels'
 
@@ -18,6 +20,19 @@ import { LEVELS, MINION, type LevelConfig } from './levels'
  * - `victory`: venceu o boss da última fase.
  */
 export type GameState = 'menu' | 'intro' | 'playing' | 'paused' | 'gameover' | 'victory'
+
+/** Fonte serifada da interface, no clima de pergaminho. */
+const FONT = 'Georgia, "Times New Roman", serif'
+
+/** Cores da interface. */
+const UI = {
+  panel: 'rgba(28, 18, 10, 0.88)',
+  border: '#b08d57',
+  borderDark: '#5a4128',
+  text: '#ecdcb4',
+  muted: '#a8977a',
+  accent: '#e3b04b',
+} as const
 
 /** Algo desenhado na cena ordenado pela altura (personagens e árvores). */
 interface Drawable {
@@ -61,6 +76,9 @@ export class Game {
   totalTime = 0
 
   private readonly ctx: CanvasRenderingContext2D
+  private readonly lighting: Lighting
+  /** Tempo desde que o jogo abriu, em segundos (anima a tremulação da tocha). */
+  private clock = 0
   private frameId: number | null = null
   private lastTime: number | null = null
 
@@ -68,15 +86,18 @@ export class Game {
    * @param canvas Canvas onde o jogo é desenhado. É redimensionado para o tamanho do mapa.
    * @param images Imagens já carregadas.
    * @param input Estado do teclado.
+   * @param sound Música e efeitos sonoros (mudo por padrão).
    */
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly images: Images,
     private readonly input: Input,
+    private readonly sound: Sound = SILENT,
   ) {
     const ctx = canvas.getContext('2d')
     if (!ctx) throw new Error('Canvas 2D indisponível')
     this.ctx = ctx
+    this.lighting = new Lighting(1, 1)
     this.map = this.buildMap(this.level)
   }
 
@@ -108,6 +129,7 @@ export class Game {
     this.levelIndex = 0
     this.totalTime = 0
     this.player = null
+    this.sound.startMusic()
     this.showIntro()
   }
 
@@ -153,6 +175,7 @@ export class Game {
     this.canvas.width = map.pixelWidth
     this.canvas.height = map.pixelHeight
     this.canvas.style.setProperty('--aspect', String(map.pixelWidth / map.pixelHeight))
+    this.lighting.resize(map.pixelWidth, map.pixelHeight)
     return map
   }
 
@@ -189,9 +212,11 @@ export class Game {
    * @param dt Tempo desde o último frame, em segundos.
    */
   private update(dt: number): void {
+    this.clock += dt
     const enter = this.input.wasPressed('Enter')
     const pause = this.input.wasPressed('p')
     const attack = this.input.wasPressed(' ')
+    if (this.input.wasPressed('m')) this.sound.toggleMute()
 
     switch (this.state) {
       case 'menu':
@@ -205,12 +230,16 @@ export class Game {
         break
 
       case 'paused':
-        if (pause) this.state = 'playing'
+        if (pause) {
+          this.state = 'playing'
+          this.sound.duckMusic(false)
+        }
         break
 
       case 'playing':
         if (pause) {
           this.state = 'paused'
+          this.sound.duckMusic(true)
           break
         }
         this.updatePlaying(dt, attack)
@@ -244,7 +273,10 @@ export class Game {
     player.step(dt, this.input, this.map)
     if (attack) {
       const projectile = player.shoot()
-      if (projectile) this.projectiles.push(projectile)
+      if (projectile) {
+        this.projectiles.push(projectile)
+        this.sound.play('playerShot')
+      }
     }
 
     for (const enemy of this.enemies) {
@@ -284,7 +316,10 @@ export class Game {
   private handleEvents(events: EnemyEvent[]): void {
     for (const event of events) {
       if (event.type === 'teleport') this.showTeleport(event.from, event.to)
-      else this.projectiles.push(new Projectile(event.from, event.direction, 'boss'))
+      else {
+        this.projectiles.push(new Projectile(event.from, event.direction, 'boss'))
+        this.sound.play('bossShot')
+      }
     }
   }
 
@@ -346,6 +381,7 @@ export class Game {
       player.hurt()
       if (!player.alive) {
         this.state = 'gameover'
+        this.sound.stopMusic()
         playSound('die')
       }
     } else if (projectile.end === 'wall') {
@@ -359,6 +395,7 @@ export class Game {
    * @param damaged true se tirou vida (explosão); false se foi bloqueado ou bateu na parede (faísca).
    */
   private showImpact(position: Point, damaged: boolean): void {
+    this.sound.play(damaged ? 'hit' : 'blocked')
     this.effects.push(
       damaged
         ? new SpriteEffect(
@@ -403,6 +440,7 @@ export class Game {
   private levelCleared(): void {
     if (this.levelIndex >= LEVELS.length - 1) {
       this.state = 'victory'
+      this.sound.stopMusic()
       return
     }
     this.levelIndex++
@@ -422,6 +460,7 @@ export class Game {
 
     if (!player.alive) {
       this.state = 'gameover'
+      this.sound.stopMusic()
       playSound('die')
       return
     }
@@ -456,6 +495,7 @@ export class Game {
     for (const drawable of drawables) drawable.render(ctx, map.tileSize)
     for (const projectile of this.projectiles) projectile.render(ctx, map.tileSize)
     for (const effect of this.effects) effect.render(ctx, map.tileSize)
+    this.lighting.render(ctx, this.lights(), map.tileSize)
 
     if (this.state === 'playing' || this.state === 'paused') this.renderHud()
 
@@ -467,7 +507,8 @@ export class Game {
             'Derrote o boss de cada fase sem perder as 3 vidas.',
             'O boss só leva dano quando pisca: 3s a cada 10s.',
             'Protegido, ele atira em você a cada 5s.',
-            'Setas/WASD: andar   ·   Espaço: lançar poder   ·   P: pausar',
+            'Setas/WASD: andar   ·   Espaço: lançar poder',
+            'P: pausar   ·   M: liga/desliga o som',
           ],
           'Enter para começar',
         )
@@ -498,28 +539,92 @@ export class Game {
     }
   }
 
-  /** Desenha fase, vidas e tempo no canto e a vida do boss no topo. */
+  /**
+   * Fontes de luz da cena: a tocha do jogador (tremulando), os projéteis e uma luz fraca
+   * em cada inimigo para dar para acompanhá-los no escuro.
+   * @returns As luzes do frame.
+   */
+  private lights(): Light[] {
+    const lights: Light[] = []
+    const player = this.player
+    if (player && this.state !== 'intro') {
+      const flicker = Math.sin(this.clock * 9) * 0.12 + Math.sin(this.clock * 23) * 0.06
+      lights.push({ position: player.position, radius: 4.6 + flicker, intensity: 1 })
+    }
+    for (const enemy of this.enemies) {
+      lights.push({
+        position: enemy.position,
+        radius: enemy.isBoss ? 1.8 : 1.3,
+        intensity: 0.55,
+        color: enemy.isBoss ? '255, 70, 50' : '255, 150, 60',
+      })
+    }
+    for (const projectile of this.projectiles) {
+      lights.push({
+        position: projectile.position,
+        radius: 1.6,
+        intensity: 0.85,
+        color: projectile.kind === 'boss' ? '255, 80, 60' : '120, 190, 255',
+      })
+    }
+    return lights
+  }
+
+  /**
+   * Painel de pergaminho escuro com moldura dourada dupla.
+   * @param x Esquerda, em pixels.
+   * @param y Topo, em pixels.
+   * @param width Largura, em pixels.
+   * @param height Altura, em pixels.
+   */
+  private drawPanel(x: number, y: number, width: number, height: number): void {
+    const { ctx } = this
+    ctx.fillStyle = UI.panel
+    ctx.fillRect(x, y, width, height)
+    ctx.strokeStyle = UI.borderDark
+    ctx.lineWidth = 4
+    ctx.strokeRect(x + 2, y + 2, width - 4, height - 4)
+    ctx.strokeStyle = UI.border
+    ctx.lineWidth = 1.5
+    ctx.strokeRect(x + 4.5, y + 4.5, width - 9, height - 9)
+  }
+
+  /** Desenha fase, vidas e tempo no canto e a vida do boss embaixo. */
   private renderHud(): void {
     const { ctx, map } = this
     const player = this.player
-    const hearts = player
-      ? '♥'.repeat(player.lives) + '♡'.repeat(Math.max(0, PLAYER_SETTINGS.lives - player.lives))
-      : ''
-    const text = `Fase ${this.levelIndex + 1}/${LEVELS.length}   ${hearts}   ${this.levelTime.toFixed(1)}s`
+    const lives = player ? player.lives : 0
+    const missing = Math.max(0, PLAYER_SETTINGS.lives - lives)
 
-    ctx.font = 'bold 20px system-ui, sans-serif'
+    ctx.textBaseline = 'middle'
     ctx.textAlign = 'left'
-    ctx.textBaseline = 'top'
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
-    ctx.fillRect(8, 8, ctx.measureText(text).width + 24, 36)
-    ctx.fillStyle = '#fff'
-    ctx.fillText(text, 20, 16)
+    ctx.font = `bold 20px ${FONT}`
+    const label = `Fase ${this.levelIndex + 1}/${LEVELS.length}`
+    const time = `${this.levelTime.toFixed(1)}s`
+    const hearts = '♥'.repeat(lives)
+    const empty = '♥'.repeat(missing)
+    const width =
+      ctx.measureText(label).width + ctx.measureText(hearts + empty).width + ctx.measureText(time).width + 88
+    this.drawPanel(8, 8, width, 42)
+
+    let x = 24
+    ctx.fillStyle = UI.text
+    ctx.fillText(label, x, 30)
+    x += ctx.measureText(label).width + 22
+    ctx.fillStyle = '#d64545'
+    ctx.fillText(hearts, x, 30)
+    x += ctx.measureText(hearts).width
+    ctx.fillStyle = 'rgba(214, 69, 69, 0.25)'
+    ctx.fillText(empty, x, 30)
+    x += ctx.measureText(empty).width + 22
+    ctx.fillStyle = UI.muted
+    ctx.fillText(time, x, 30)
 
     const boss = this.boss
     if (!boss) return
-    const width = 300
-    const x = map.pixelWidth - width - 16
-    const y = map.pixelHeight - 40
+    const barWidth = 300
+    const bx = map.pixelWidth - barWidth - 24
+    const by = map.pixelHeight - 38
     const speed = (0.3 / boss.stepDuration).toFixed(1)
     const countdown = boss.vulnerabilityCountdown
     let status = ''
@@ -527,25 +632,25 @@ export class Game {
       status = boss.isVulnerable ? `VULNERÁVEL ${countdown.toFixed(1)}s` : `protegido, abre em ${countdown.toFixed(1)}s`
     }
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
-    ctx.fillRect(x - 8, y - 30, width + 16, 62)
-    ctx.font = 'bold 16px system-ui, sans-serif'
-    ctx.fillStyle = '#fff'
-    ctx.fillText(`Boss  ${speed}x`, x, y - 24)
+    this.drawPanel(bx - 16, by - 36, barWidth + 32, 66)
+    ctx.font = `bold 16px ${FONT}`
+    ctx.fillStyle = UI.text
+    ctx.fillText(`Boss  ${speed}x`, bx, by - 15)
     ctx.textAlign = 'right'
-    ctx.fillStyle = boss.isVulnerable ? '#ffd54a' : '#9e9e9e'
-    ctx.fillText(status, x + width, y - 24)
+    ctx.fillStyle = boss.isVulnerable ? UI.accent : UI.muted
+    ctx.fillText(status, bx + barWidth, by - 15)
     ctx.textAlign = 'left'
-    ctx.fillStyle = '#5a1d1d'
-    ctx.fillRect(x, y, width, 16)
-    ctx.fillStyle = boss.isVulnerable ? '#ff5252' : '#8e3b3b'
-    ctx.fillRect(x, y, (width * boss.hp) / boss.maxHp, 16)
-    ctx.strokeStyle = '#fff'
-    ctx.strokeRect(x, y, width, 16)
+    ctx.fillStyle = '#2a0f0c'
+    ctx.fillRect(bx, by, barWidth, 14)
+    ctx.fillStyle = boss.isVulnerable ? '#d93c2f' : '#7a2a22'
+    ctx.fillRect(bx, by, (barWidth * boss.hp) / boss.maxHp, 14)
+    ctx.strokeStyle = UI.border
+    ctx.lineWidth = 1
+    ctx.strokeRect(bx + 0.5, by + 0.5, barWidth - 1, 13)
   }
 
   /**
-   * Escurece a tela e escreve uma mensagem centralizada.
+   * Escurece a tela e mostra uma mensagem num painel de pergaminho centralizado.
    * @param title Texto principal.
    * @param lines Linhas de apoio.
    * @param hint Instrução de qual tecla apertar.
@@ -553,26 +658,40 @@ export class Game {
   private renderOverlay(title: string, lines: string[], hint: string): void {
     const { ctx, map } = this
     const cx = map.pixelWidth / 2
-    let y = map.pixelHeight / 2 - 40 - lines.length * 20
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.65)'
+    ctx.fillStyle = 'rgba(8, 5, 3, 0.6)'
     ctx.fillRect(0, 0, map.pixelWidth, map.pixelHeight)
+
+    const titleSize = title.length > 24 ? 42 : 56
+    ctx.font = `bold ${titleSize}px ${FONT}`
+    let contentWidth = ctx.measureText(title).width
+    ctx.font = `22px ${FONT}`
+    for (const line of lines) contentWidth = Math.max(contentWidth, ctx.measureText(line).width)
+    const panelWidth = Math.min(map.pixelWidth - 40, contentWidth + 100)
+    const panelHeight = 150 + lines.length * 34
+    const top = map.pixelHeight / 2 - panelHeight / 2
+    this.drawPanel(cx - panelWidth / 2, top, panelWidth, panelHeight)
 
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillStyle = '#fff'
-    ctx.font = `bold ${title.length > 24 ? 44 : 60}px system-ui, sans-serif`
+    let y = top + 52
+    ctx.font = `bold ${titleSize}px ${FONT}`
+    ctx.fillStyle = UI.accent
     ctx.fillText(title, cx, y)
-    y += 70
+    y += 48
 
-    ctx.font = '26px system-ui, sans-serif'
+    ctx.fillStyle = UI.border
+    ctx.fillRect(cx - 80, y - 14, 160, 1)
+
+    ctx.font = `22px ${FONT}`
+    ctx.fillStyle = UI.text
     for (const line of lines) {
-      ctx.fillText(line, cx, y)
-      y += 40
+      ctx.fillText(line, cx, y + 10)
+      y += 34
     }
 
-    ctx.fillStyle = '#ffd54a'
-    ctx.font = 'bold 28px system-ui, sans-serif'
-    ctx.fillText(hint, cx, y + 20)
+    ctx.font = `bold italic 22px ${FONT}`
+    ctx.fillStyle = UI.accent
+    ctx.fillText(hint, cx, y + 26)
   }
 }

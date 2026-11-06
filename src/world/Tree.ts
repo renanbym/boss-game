@@ -20,10 +20,6 @@ const BLINK_RATE = 6
  * para quem passa atrás ficar coberto pela copa. Some, pisca e reaparece conforme o `Grove`.
  */
 export class Tree {
-  /** Posição da árvore, em unidades de casa. */
-  readonly position: Point
-  private readonly sprite: (typeof TREE_SPRITES)[number]
-
   /**
    * @param state Estado da árvore no ciclo (compartilhado com o `Grove`).
    * @param image Spritesheet de cenário (`walls.png`).
@@ -31,10 +27,11 @@ export class Tree {
   constructor(
     private readonly state: TreeState,
     private readonly image: HTMLImageElement,
-  ) {
-    this.position = { ...state.tile }
-    // Escolha estável por posição: a mesma casa sempre tem o mesmo tipo de árvore
-    this.sprite = TREE_SPRITES[(state.tile.x * 7 + state.tile.y * 13) % 4 === 0 ? 1 : 0]
+  ) {}
+
+  /** Posição atual da árvore, em unidades de casa (muda quando ela reaparece em outro lugar). */
+  get position(): Point {
+    return this.state.tile
   }
 
   /**
@@ -57,7 +54,9 @@ export class Tree {
     const alpha = this.opacity()
     if (alpha <= 0) return
 
-    const { column, row, tall } = this.sprite
+    // Escolha estável por posição: a mesma casa sempre tem o mesmo tipo de árvore
+    const { x, y } = this.state.tile
+    const { column, row, tall } = TREE_SPRITES[(x * 7 + y * 13) % 4 === 0 ? 1 : 0]
     ctx.save()
     ctx.globalAlpha = alpha
     ctx.drawImage(
