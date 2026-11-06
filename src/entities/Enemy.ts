@@ -146,6 +146,8 @@ export class Enemy extends Entity {
 
     const direction = directionBetween(this.tile, next)
     if (direction && this.tryMove(direction, grid)) this.path.shift()
+    // O caminho ficou bloqueado (ex.: uma árvore reapareceu nele): recalcula no próximo frame
+    else this.path = []
   }
 
   /**

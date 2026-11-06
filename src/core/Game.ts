@@ -238,6 +238,9 @@ export class Game {
     this.levelTime += dt
     this.totalTime += dt
 
+    // Árvores somem e reaparecem; não reaparecem em cima de ninguém
+    this.map.grove.update(dt, (tile) => this.isOccupied(tile))
+
     player.step(dt, this.input, this.map)
     if (attack) {
       const projectile = player.shoot()
@@ -252,6 +255,26 @@ export class Game {
     this.updateProjectiles(dt, player)
     if (this.state !== 'playing') return // o boss pode ter sido derrotado, ou o jogador abatido, agora
     this.checkCaught(player)
+  }
+
+  /**
+   * Diz se algum personagem está numa casa, inclusive de passagem (no meio de um passo).
+   * @param tile Casa a verificar.
+   * @returns true se o jogador ou algum inimigo vivo ocupa a casa.
+   */
+  private isOccupied(tile: Point): boolean {
+    const characters = [...this.enemies, ...(this.player ? [this.player] : [])]
+    return characters.some((c) => {
+      if (!c.alive) return false
+      const p = c.position
+      const touches = (x: number, y: number) => x === tile.x && y === tile.y
+      // A casa de destino e as casas que o desenho está tocando agora
+      return (
+        touches(c.tile.x, c.tile.y) ||
+        touches(Math.floor(p.x), Math.floor(p.y)) ||
+        touches(Math.ceil(p.x), Math.ceil(p.y))
+      )
+    })
   }
 
   /**

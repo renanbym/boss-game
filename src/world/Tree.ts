@@ -1,3 +1,4 @@
+import type { TreeState } from './Grove'
 import type { Point } from './Pathfinding'
 
 /** Tamanho de cada tile nas spritesheets de cenário, em pixels. */
@@ -11,9 +12,12 @@ const TREE_SPRITES = [
   { column: 4, row: 7, tall: 1 },
 ] as const
 
+/** Piscadas por segundo enquanto a árvore avisa que vai reaparecer. */
+const BLINK_RATE = 6
+
 /**
- * Árvore do cenário. Fica numa casa bloqueada, mas é desenhada junto com os
- * personagens (ordenada pela altura) para quem passa atrás ficar coberto pela copa.
+ * Árvore do cenário. É desenhada junto com os personagens (ordenada pela altura)
+ * para quem passa atrás ficar coberto pela copa. Some, pisca e reaparece conforme o `Grove`.
  */
 export class Tree {
   /** Posição da árvore, em unidades de casa. */
@@ -21,16 +25,27 @@ export class Tree {
   private readonly sprite: (typeof TREE_SPRITES)[number]
 
   /**
-   * @param tile Casa onde a árvore está.
+   * @param state Estado da árvore no ciclo (compartilhado com o `Grove`).
    * @param image Spritesheet de cenário (`walls.png`).
    */
   constructor(
-    tile: Point,
+    private readonly state: TreeState,
     private readonly image: HTMLImageElement,
   ) {
-    this.position = { ...tile }
+    this.position = { ...state.tile }
     // Escolha estável por posição: a mesma casa sempre tem o mesmo tipo de árvore
-    this.sprite = TREE_SPRITES[(tile.x * 7 + tile.y * 13) % 4 === 0 ? 1 : 0]
+    this.sprite = TREE_SPRITES[(state.tile.x * 7 + state.tile.y * 13) % 4 === 0 ? 1 : 0]
+  }
+
+  /**
+   * Transparência da árvore conforme a fase: some quando `gone`, pisca quando `warning`.
+   * @returns Opacidade de 0 a 1.
+   */
+  opacity(): number {
+    if (this.state.phase === 'gone') return 0
+    if (this.state.phase === 'solid') return 1
+    // Pisca contando o tempo que falta, então o ritmo é o mesmo em todas as árvores
+    return Math.floor(this.state.timeLeft * BLINK_RATE * 2) % 2 === 0 ? 0.75 : 0.15
   }
 
   /**
@@ -39,7 +54,12 @@ export class Tree {
    * @param tileSize Tamanho de cada casa, em pixels.
    */
   render(ctx: CanvasRenderingContext2D, tileSize: number): void {
+    const alpha = this.opacity()
+    if (alpha <= 0) return
+
     const { column, row, tall } = this.sprite
+    ctx.save()
+    ctx.globalAlpha = alpha
     ctx.drawImage(
       this.image,
       column * SOURCE_TILE,
@@ -51,5 +71,6 @@ export class Tree {
       tileSize,
       tileSize * tall,
     )
+    ctx.restore()
   }
 }

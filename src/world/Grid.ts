@@ -1,3 +1,4 @@
+import { Grove } from './Grove'
 import type { LevelMap } from './maps'
 import type { Point, Walkable } from './Pathfinding'
 
@@ -14,6 +15,8 @@ export class Grid implements Walkable {
    * Usada por quem atravessa paredes.
    */
   readonly ghostGrid: Walkable
+  /** Ciclo das árvores: decide se cada árvore está bloqueando agora. */
+  readonly grove: Grove
   private readonly walls: boolean[][]
   private readonly trees: boolean[][]
   /** Casas livres da maior região conectada: só nelas alguém pode nascer. */
@@ -21,8 +24,9 @@ export class Grid implements Walkable {
 
   /**
    * @param map Mapa da fase.
+   * @param random Gerador de números em [0, 1) usado no ciclo das árvores. Trocável nos testes.
    */
-  constructor(map: LevelMap) {
+  constructor(map: LevelMap, random: () => number = Math.random) {
     this.name = map.name
     this.walls = map.walls
     this.trees = map.trees
@@ -33,6 +37,8 @@ export class Grid implements Walkable {
       height: this.height,
       isWalkable: (x, y) => this.isInside(x, y),
     }
+    this.grove = new Grove(this.treeTiles(), random)
+    // As árvores começam sólidas, então ninguém nasce numa casa de árvore
     this.spawnable = this.largestRegion()
   }
 
@@ -53,16 +59,17 @@ export class Grid implements Walkable {
   /**
    * @param x Coluna.
    * @param y Linha.
-   * @returns true se a casa está dentro do mapa e não é parede.
+   * @returns true se a casa está dentro do mapa, não é parede e não tem árvore sólida agora.
    */
   isWalkable(x: number, y: number): boolean {
+    if (this.isTree(x, y)) return !this.grove.isSolid(x, y)
     return this.walls[y]?.[x] === false
   }
 
   /**
    * @param x Coluna.
    * @param y Linha.
-   * @returns true se há uma árvore na casa.
+   * @returns true se a casa é lugar de árvore (sólida, sumida ou piscando).
    */
   isTree(x: number, y: number): boolean {
     return this.trees[y]?.[x] === true

@@ -14,7 +14,7 @@ Você tem 3 vidas para o jogo todo. Ao ser pego, perde uma, fica invulnerável p
 
 **Protegido, o boss atira em você.** Um tiro a cada 5 segundos, na sua direção, mas nunca durante a janela de vulnerabilidade (se o tempo vencer com a janela aberta, ele espera ela fechar). O tiro é vermelho, mais lento que o seu poder, alcança 7 casas, para em paredes e árvores e tira uma vida se acertar.
 
-**Árvores** bloqueiam a passagem e os tiros, como as paredes. Só o boss da fase 3, que atravessa paredes, passa por elas.
+**Árvores aparecem e somem.** Cada uma fica 8 segundos no mapa, some por 6 segundos e, antes de voltar, **pisca por 2 segundos** como aviso. Enquanto está no mapa, bloqueia a passagem e os tiros como uma parede; sumida ou piscando, dá para passar. Elas não reaparecem em cima de ninguém: se houver alguém na casa, a árvore continua piscando até a casa vagar. Os tempos são desencontrados, então as árvores não somem todas juntas. Só o boss da fase 3, que atravessa paredes, ignora as árvores.
 
 ## Como rodar
 
@@ -67,6 +67,7 @@ src/
   entities/Enemy.ts    boss e lacaios: perseguição, habilidades e janela de vulnerabilidade
   effects/SpriteEffect.ts  animações de golpe, explosão e teletransporte
   world/Grid.ts        lógica do mapa: colisão, árvores, regiões e sorteio de casas
+  world/Grove.ts       ciclo das árvores: sólida, sumida e piscando
   world/Tree.ts        desenho das árvores
   world/TileMap.ts     Grid + desenho do cenário
   world/Pathfinding.ts A* no grid

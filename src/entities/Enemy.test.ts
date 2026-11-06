@@ -59,6 +59,25 @@ describe('Enemy', () => {
     expect(enemy.tile.x).toBeLessThanOrEqual(1)
   })
 
+  it('refaz a rota quando uma árvore reaparece no caminho', () => {
+    const grid = gridFrom(
+      '..T..', //
+      '.....',
+    )
+    // Árvore some: o caminho mais curto passa por ela
+    simulate(10, (dt) => grid.grove.update(dt, () => false))
+    expect(grid.isWalkable(2, 0)).toBe(true)
+
+    const { enemy, target } = chase({ x: 0, y: 0 }, { x: 4, y: 0 })
+    enemy.step(1 / 60, grid) // calcula a rota pela linha de cima
+    const tree = grid.grove.trees[0]!
+    tree.phase = 'solid' // a árvore volta antes de ele passar
+    tree.timeLeft = 99
+
+    simulate(2, (dt) => enemy.step(dt, grid))
+    expect(enemy.distanceTo(target)).toBe(0)
+  })
+
   it('atravessa paredes quando é fantasma', () => {
     const grid = gridFrom('..#..')
     const { enemy, target } = chase({ x: 0, y: 0 }, { x: 4, y: 0 }, { ghost: true })

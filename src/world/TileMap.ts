@@ -29,7 +29,7 @@ export class TileMap extends Grid {
   ) {
     super(map)
     this.background = this.prerender(images)
-    this.treeSprites = this.treeTiles().map((tile) => new Tree(tile, images.walls))
+    this.treeSprites = this.grove.trees.map((state) => new Tree(state, images.walls))
   }
 
   /** Largura do mapa, em pixels. */
