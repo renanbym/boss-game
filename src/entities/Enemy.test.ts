@@ -113,6 +113,76 @@ describe('Enemy', () => {
     expect(enemy.stepDuration).toBe(0.03)
   })
 
+  describe('janela de vulnerabilidade (boss)', () => {
+    const vulnerability = { every: 10, duration: 3 }
+    const grid = gridFrom('.....')
+
+    /**
+     * Boss parado (alvo na mesma casa) com janela de vulnerabilidade.
+     * @returns O boss.
+     */
+    const boss = () => chase({ x: 2, y: 0 }, { x: 2, y: 0 }, { vulnerability }).enemy
+
+    it('bloqueia golpes antes da primeira janela', () => {
+      const b = boss()
+      simulate(9.9, (dt) => b.step(dt, grid))
+      expect(b.isVulnerable).toBe(false)
+      expect(b.hurt('right', grid)).toBe(false)
+      expect(b.hp).toBe(3)
+    })
+
+    it('leva dano durante os 3 segundos da janela', () => {
+      const b = boss()
+      simulate(10.05, (dt) => b.step(dt, grid))
+      expect(b.isVulnerable).toBe(true)
+      expect(b.hurt('right', grid)).toBe(true)
+      expect(b.hp).toBe(2)
+    })
+
+    it('fecha depois de 3 segundos e abre de novo 10 segundos depois da anterior', () => {
+      const b = boss()
+      simulate(13.1, (dt) => b.step(dt, grid))
+      expect(b.isVulnerable).toBe(false)
+      expect(b.hurt('right', grid)).toBe(false)
+
+      simulate(7, (dt) => b.step(dt, grid)) // ~20.1s
+      expect(b.isVulnerable).toBe(true)
+    })
+
+    it('mostra quanto falta para abrir e para fechar', () => {
+      const b = boss()
+      simulate(4, (dt) => b.step(dt, grid))
+      expect(b.vulnerabilityCountdown).toBeCloseTo(6, 1)
+      simulate(7, (dt) => b.step(dt, grid)) // ~11s, janela aberta
+      expect(b.vulnerabilityCountdown).toBeCloseTo(2, 1)
+    })
+
+    it('pisca enquanto está vulnerável e fica normal quando protegido', () => {
+      const b = boss()
+      const protectedOpacity = new Set<number>()
+      simulate(9.5, (dt) => {
+        b.step(dt, grid)
+        protectedOpacity.add(b.opacity)
+      })
+      expect([...protectedOpacity]).toEqual([1])
+
+      const vulnerableOpacity = new Set<number>()
+      simulate(2.5, (dt) => {
+        b.step(dt, grid)
+        if (b.isVulnerable) vulnerableOpacity.add(b.opacity)
+      })
+      expect(vulnerableOpacity.size).toBe(2) // alterna entre visível e apagado
+    })
+
+    it('inimigos sem janela sempre levam dano e não piscam', () => {
+      const { enemy } = chase({ x: 2, y: 0 }, { x: 2, y: 0 })
+      expect(enemy.isVulnerable).toBe(true)
+      expect(enemy.vulnerabilityCountdown).toBeNull()
+      enemy.step(0.5, grid)
+      expect(enemy.opacity).toBe(1)
+    })
+  })
+
   it('teletransporta para longe do alvo no intervalo certo', () => {
     const grid = gridFrom(...Array.from({ length: 10 }, () => '..........'))
     const teleport = { every: 2, minDistance: 8 }

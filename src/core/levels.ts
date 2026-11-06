@@ -17,6 +17,9 @@ const SPEED_UP = { every: 10, factor: 0.88, minStepDuration: 0.14 }
 /** Teletransporte dos bosses das fases 2 e 3: a cada 6s, para pelo menos 6 casas do jogador. */
 const TELEPORT = { every: 6, minDistance: 6 }
 
+/** Todos os bosses só levam dano 3s a cada 10s, e piscam enquanto estão vulneráveis. */
+const VULNERABILITY = { every: 10, duration: 3 }
+
 /** Lacaio comum: 1 golpe, sem habilidades. Também é o que o botão "Adicionar vilão" cria. */
 export const MINION: EnemyOptions = {
   character: 0,
@@ -31,7 +34,13 @@ export const LEVELS: readonly LevelConfig[] = [
   {
     map: MAPS[0]!,
     description: 'O boss fica mais rápido a cada 10 segundos.',
-    boss: { character: 4, stepDuration: 0.3, hp: 4, isBoss: true, abilities: { speedUp: SPEED_UP } },
+    boss: {
+      character: 4,
+      stepDuration: 0.3,
+      hp: 4,
+      isBoss: true,
+      abilities: { speedUp: SPEED_UP, vulnerability: VULNERABILITY },
+    },
     minions: 0,
   },
   {
@@ -42,7 +51,7 @@ export const LEVELS: readonly LevelConfig[] = [
       stepDuration: 0.3,
       hp: 5,
       isBoss: true,
-      abilities: { speedUp: SPEED_UP, teleport: TELEPORT },
+      abilities: { speedUp: SPEED_UP, teleport: TELEPORT, vulnerability: VULNERABILITY },
     },
     minions: 1,
   },
@@ -54,7 +63,7 @@ export const LEVELS: readonly LevelConfig[] = [
       stepDuration: 0.3,
       hp: 6,
       isBoss: true,
-      abilities: { speedUp: SPEED_UP, teleport: TELEPORT, ghost: true },
+      abilities: { speedUp: SPEED_UP, teleport: TELEPORT, ghost: true, vulnerability: VULNERABILITY },
     },
     minions: 2,
   },

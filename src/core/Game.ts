@@ -1,7 +1,7 @@
 import { SpriteEffect, type EffectSheet } from '../effects/SpriteEffect'
 import { Enemy, type EnemyOptions } from '../entities/Enemy'
-import type { Direction } from '../entities/Entity'
 import { Player, PLAYER_SETTINGS } from '../entities/Player'
+import { PROJECTILE_SETTINGS, type Projectile } from '../entities/Projectile'
 import type { Point } from '../world/Pathfinding'
 import { TileMap } from '../world/TileMap'
 import { playSound, type Images } from './assets'
@@ -27,19 +27,9 @@ export const SETTINGS = {
   spawnDistance: 8,
   /** Distância, em casas, em que um inimigo pega o jogador. */
   catchDistance: 0.6,
-  /** Distância, em casas, entre o centro do golpe e um inimigo para acertá-lo. */
-  hitDistance: 0.75,
   /** Maior delta time aceito, em segundos (evita "teleporte" depois de a aba ficar parada). */
   maxDeltaTime: 0.1,
 } as const
-
-/** Ângulo do golpe para cada direção (a arte do golpe aponta para a direita). */
-const SLASH_ROTATION: Record<Direction, number> = {
-  right: 0,
-  down: Math.PI / 2,
-  left: Math.PI,
-  up: -Math.PI / 2,
-}
 
 /**
  * Loop principal do jogo: atualiza a lógica com delta time, controla as fases e desenha a cena.
@@ -52,6 +42,8 @@ export class Game {
   player: Player | null = null
   enemies: Enemy[] = []
   effects: SpriteEffect[] = []
+  /** Poderes lançados pelo jogador que ainda estão voando. */
+  projectiles: Projectile[] = []
   /** Tempo na fase atual, em segundos. */
   levelTime = 0
   /** Tempo total de jogo, somando as fases, em segundos. */
@@ -122,6 +114,7 @@ export class Game {
     this.map = this.buildMap(this.level)
     this.enemies = []
     this.effects = []
+    this.projectiles = []
     this.state = 'intro'
   }
 
@@ -131,6 +124,7 @@ export class Game {
     this.player = new Player({ image: this.images.actors, character: 0 }, this.map.randomFreeTile(), lives)
     this.enemies = []
     this.effects = []
+    this.projectiles = []
     this.levelTime = 0
     this.state = 'playing'
 
@@ -222,7 +216,7 @@ export class Game {
   }
 
   /**
-   * Move todo mundo, resolve ataques e golpes e verifica fim de fase.
+   * Move todo mundo, resolve os poderes lançados e verifica se o jogador foi pego.
    * @param dt Tempo desde o último frame, em segundos.
    * @param attack true se o jogador apertou o ataque neste frame.
    */
@@ -234,37 +228,64 @@ export class Game {
     this.totalTime += dt
 
     player.step(dt, this.input, this.map)
-    if (attack) this.playerAttack(player)
+    if (attack) {
+      const projectile = player.shoot()
+      if (projectile) this.projectiles.push(projectile)
+    }
 
     for (const enemy of this.enemies) {
       enemy.step(dt, this.map)
       for (const event of enemy.takeEvents()) this.showTeleport(event.from, event.to)
     }
 
+    this.updateProjectiles(dt)
+    if (this.state !== 'playing') return // o boss pode ter sido derrotado agora
     this.checkCaught(player)
   }
 
   /**
-   * Golpeia a casa à frente do jogador e machuca quem estiver nela.
-   * @param player Jogador.
+   * Move os poderes lançados. O primeiro inimigo no caminho recebe o golpe;
+   * se ele estiver protegido (boss fora da janela ou atordoado), o golpe é bloqueado.
+   * @param dt Tempo desde o último frame, em segundos.
    */
-  private playerAttack(player: Player): void {
-    const target = player.attack()
-    if (!target) return
+  private updateProjectiles(dt: number): void {
+    for (const projectile of this.projectiles) {
+      let target: Enemy | undefined
+      projectile.advance(dt, this.map, (position) => {
+        target = this.enemies.find((e) => e.alive && e.distanceToPoint(position) < PROJECTILE_SETTINGS.hitDistance)
+        return target !== undefined
+      })
 
-    this.effects.push(
-      new SpriteEffect(
-        { image: this.images.slash, firstFrame: 0, frameCount: 6 },
-        { center: target, size: 1.6, frameTime: 0.04, rotation: SLASH_ROTATION[player.facing] },
-      ),
-    )
-
-    for (const enemy of this.enemies) {
-      if (enemy.distanceToPoint(target) > SETTINGS.hitDistance) continue
-      if (!enemy.hurt(player.facing, this.map)) continue
-      if (!enemy.alive) this.onEnemyKilled(enemy)
+      if (projectile.end === 'hit' && target) {
+        const damaged = target.hurt(projectile.direction, this.map)
+        this.showImpact(projectile.position, damaged)
+        if (damaged && !target.alive) this.onEnemyKilled(target)
+      } else if (projectile.end === 'wall') {
+        this.showImpact(projectile.position, false)
+      }
     }
+
+    this.projectiles = this.projectiles.filter((p) => p.isFlying)
     this.enemies = this.enemies.filter((e) => e.alive)
+  }
+
+  /**
+   * Mostra o impacto do poder.
+   * @param position Onde o poder parou, em unidades de casa.
+   * @param damaged true se tirou vida (explosão); false se foi bloqueado ou bateu na parede (faísca).
+   */
+  private showImpact(position: Point, damaged: boolean): void {
+    this.effects.push(
+      damaged
+        ? new SpriteEffect(
+            { image: this.images.burst, firstFrame: 5, frameCount: 12 },
+            { center: position, size: 1.3, frameTime: 0.03 },
+          )
+        : new SpriteEffect(
+            { image: this.images.slash, firstFrame: 0, frameCount: 6 },
+            { center: position, size: 0.9, frameTime: 0.03 },
+          ),
+    )
   }
 
   /**
@@ -346,6 +367,7 @@ export class Game {
       (a, b) => a.position.y - b.position.y,
     )
     for (const entity of entities) entity.render(ctx, map.tileSize)
+    for (const projectile of this.projectiles) projectile.render(ctx, map.tileSize)
     for (const effect of this.effects) effect.render(ctx, map.tileSize)
 
     if (this.state === 'playing' || this.state === 'paused') this.renderHud()
@@ -356,7 +378,8 @@ export class Game {
           'Boss Game',
           [
             'Derrote o boss de cada fase sem perder as 3 vidas.',
-            'Setas ou WASD: andar   ·   Espaço: atacar   ·   P: pausar',
+            'O boss só leva dano quando pisca: 3s a cada 10s.',
+            'Setas/WASD: andar   ·   Espaço: lançar poder   ·   P: pausar',
           ],
           'Enter para começar',
         )
@@ -410,15 +433,24 @@ export class Game {
     const x = map.pixelWidth - width - 16
     const y = map.pixelHeight - 40
     const speed = (0.3 / boss.stepDuration).toFixed(1)
+    const countdown = boss.vulnerabilityCountdown
+    let status = ''
+    if (countdown !== null) {
+      status = boss.isVulnerable ? `VULNERÁVEL ${countdown.toFixed(1)}s` : `protegido, abre em ${countdown.toFixed(1)}s`
+    }
 
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
     ctx.fillRect(x - 8, y - 30, width + 16, 62)
-    ctx.fillStyle = '#fff'
     ctx.font = 'bold 16px system-ui, sans-serif'
-    ctx.fillText(`Boss   velocidade ${speed}x`, x, y - 24)
+    ctx.fillStyle = '#fff'
+    ctx.fillText(`Boss  ${speed}x`, x, y - 24)
+    ctx.textAlign = 'right'
+    ctx.fillStyle = boss.isVulnerable ? '#ffd54a' : '#9e9e9e'
+    ctx.fillText(status, x + width, y - 24)
+    ctx.textAlign = 'left'
     ctx.fillStyle = '#5a1d1d'
     ctx.fillRect(x, y, width, 16)
-    ctx.fillStyle = '#e53935'
+    ctx.fillStyle = boss.isVulnerable ? '#ff5252' : '#8e3b3b'
     ctx.fillRect(x, y, (width * boss.hp) / boss.maxHp, 16)
     ctx.strokeStyle = '#fff'
     ctx.strokeRect(x, y, width, 16)

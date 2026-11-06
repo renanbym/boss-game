@@ -22,6 +22,16 @@ export interface Abilities {
   }
   /** Atravessa paredes. */
   ghost?: boolean
+  /**
+   * Só leva dano em janelas de tempo; fora delas os golpes são bloqueados.
+   * A primeira janela abre em `every` segundos, depois a cada `every` segundos.
+   */
+  vulnerability?: {
+    /** Intervalo entre a abertura de uma janela e a próxima, em segundos. */
+    every: number
+    /** Quanto tempo cada janela fica aberta, em segundos. */
+    duration: number
+  }
 }
 
 /** Configuração de um inimigo. */
@@ -59,6 +69,8 @@ export class Enemy extends Entity {
   private stun = 0
   private speedTimer = 0
   private teleportTimer = 0
+  /** Tempo de vida do inimigo, usado para calcular as janelas de vulnerabilidade. */
+  private age = 0
   private path: Point[] = []
   private pathGoal: Point | null = null
 
@@ -86,12 +98,31 @@ export class Enemy extends Entity {
     return this.stun > 0
   }
 
+  /** true se um golpe agora tiraria vida (sempre true para quem não tem janela de vulnerabilidade). */
+  get isVulnerable(): boolean {
+    const window = this.abilities.vulnerability
+    if (!window) return true
+    return this.age >= window.every && this.age % window.every < window.duration
+  }
+
+  /**
+   * Quanto falta para a janela de vulnerabilidade mudar.
+   * @returns Segundos até fechar (se aberta) ou até abrir (se fechada); null se não tiver janela.
+   */
+  get vulnerabilityCountdown(): number | null {
+    const window = this.abilities.vulnerability
+    if (!window) return null
+    if (this.isVulnerable) return window.duration - (this.age % window.every)
+    return window.every - (this.age % window.every)
+  }
+
   /**
    * Avança timers e movimento e, quando parado numa casa, dá o próximo passo rumo ao alvo.
    * @param dt Tempo desde o último frame, em segundos.
    * @param map Mapa da fase.
    */
   step(dt: number, map: Grid): void {
+    this.age += dt
     this.stun = Math.max(0, this.stun - dt)
     this.update(dt)
     this.updateAbilities(dt, map)
@@ -110,12 +141,13 @@ export class Enemy extends Entity {
   /**
    * Recebe um golpe: perde vida, fica atordoado e é empurrado uma casa para trás.
    * Atordoado, não recebe novos golpes (evita derrotar o boss "travando" ele).
+   * Fora da janela de vulnerabilidade, o golpe é bloqueado.
    * @param from Direção de onde veio o golpe (para onde o inimigo é empurrado).
    * @param map Mapa da fase.
    * @returns true se o golpe contou.
    */
   hurt(from: Direction, map: Grid): boolean {
-    if (this.isStunned || !this.alive) return false
+    if (this.isStunned || !this.isVulnerable || !this.alive) return false
     this.hp--
     this.stun = STUN_TIME
     if (this.hp <= 0) {
@@ -180,14 +212,16 @@ export class Enemy extends Entity {
   }
 
   /**
-   * Fica translúcido dentro de paredes e pisca quando atordoado.
+   * Pisca quando atordoado ou vulnerável e fica translúcido dentro de paredes.
    * @param map Mapa da fase.
    */
   private updateOpacity(map: Grid): void {
     const p = this.position
     const insideWall = !map.isWalkable(Math.round(p.x), Math.round(p.y))
-    const blinking = this.isStunned && Math.floor(this.stun * 12) % 2 === 0
-    this.opacity = blinking ? 0.35 : insideWall ? 0.55 : 1
+    const stunBlink = this.isStunned && Math.floor(this.stun * 12) % 2 === 0
+    // Só pisca por vulnerabilidade quem tem janela (lacaios são sempre vulneráveis e não piscam)
+    const vulnerableBlink = !!this.abilities.vulnerability && this.isVulnerable && Math.floor(this.age * 8) % 2 === 0
+    this.opacity = stunBlink || vulnerableBlink ? 0.3 : insideWall ? 0.55 : 1
   }
 
   /**

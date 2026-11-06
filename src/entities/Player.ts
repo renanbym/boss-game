@@ -1,6 +1,7 @@
 import type { Input } from '../core/Input'
 import type { Point, Walkable } from '../world/Pathfinding'
-import { Entity, STEP, type Look } from './Entity'
+import { Entity, type Look } from './Entity'
+import { Projectile } from './Projectile'
 
 /** Ajustes do jogador. */
 export const PLAYER_SETTINGS = {
@@ -10,7 +11,7 @@ export const PLAYER_SETTINGS = {
   lives: 3,
   /** Tempo invulnerável depois de levar um golpe, em segundos. */
   invulnerableTime: 2,
-  /** Tempo mínimo entre dois ataques, em segundos. */
+  /** Tempo mínimo entre dois poderes lançados, em segundos. */
   attackCooldown: 0.4,
 } as const
 
@@ -55,15 +56,13 @@ export class Player extends Entity {
   }
 
   /**
-   * Ataca a casa à frente, se o ataque estiver disponível.
-   * @returns A casa atingida, ou null se ainda estiver em recarga.
+   * Lança o poder na direção em que está olhando, se não estiver em recarga.
+   * @returns O poder lançado, ou null se ainda estiver em recarga.
    */
-  attack(): Point | null {
+  shoot(): Projectile | null {
     if (this.cooldown > 0 || !this.alive) return null
     this.cooldown = PLAYER_SETTINGS.attackCooldown
-    const step = STEP[this.facing]
-    const from = this.position
-    return { x: from.x + step.x, y: from.y + step.y }
+    return new Projectile(this.position, this.facing)
   }
 
   /**

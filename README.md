@@ -10,6 +10,8 @@ Jogo em canvas: atravesse 3 fases e derrote o boss de cada uma. A cada fase o bo
 
 Você tem 3 vidas para o jogo todo. Ao ser pego, perde uma, fica invulnerável por 2 segundos e quem te pegou é jogado para longe.
 
+**O boss só leva dano quando pisca.** A cada 10 segundos ele fica vulnerável por 3 segundos (aos 10s, 20s, 30s…). Fora dessa janela o poder é bloqueado. A barra do boss mostra quanto falta para abrir ou fechar. Os lacaios levam dano a qualquer momento.
+
 ## Como rodar
 
 Precisa do Node.js 22.12 ou mais novo.
@@ -41,7 +43,7 @@ Abra http://localhost:5173.
 ## Controles
 
 - **Setas ou WASD**: andar
-- **Espaço**: atacar a casa à frente (o inimigo atingido fica atordoado e é empurrado)
+- **Espaço**: lançar o poder. Ele sai da mão do personagem, voa em linha reta na direção em que você está olhando e alcança no máximo 3 casas. Para no primeiro inimigo ou parede; o inimigo atingido fica atordoado e é empurrado
 - **Enter**: começar / avançar / jogar de novo
 - **P**: pausar
 - **Adicionar vilão** (botão): coloca mais um lacaio no mapa
@@ -56,8 +58,9 @@ src/
   core/Input.ts        estado do teclado
   core/assets.ts       carregamento de imagens e sons
   entities/Entity.ts   personagem que anda casa a casa com movimento suave
-  entities/Player.ts   jogador: vidas, ataque, invulnerabilidade
-  entities/Enemy.ts    boss e lacaios: perseguição e habilidades
+  entities/Player.ts   jogador: vidas, lançar o poder, invulnerabilidade
+  entities/Projectile.ts  o poder: voo em linha reta, alcance e colisão
+  entities/Enemy.ts    boss e lacaios: perseguição, habilidades e janela de vulnerabilidade
   effects/SpriteEffect.ts  animações de golpe, explosão e teletransporte
   world/Grid.ts        lógica do mapa: colisão, regiões e sorteio de casas
   world/TileMap.ts     Grid + desenho do cenário

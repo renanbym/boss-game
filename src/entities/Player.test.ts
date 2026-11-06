@@ -48,14 +48,19 @@ describe('Player', () => {
     expect(input.tappedDirection).toBeNull()
   })
 
-  it('ataca a casa à frente e respeita a recarga', () => {
-    const p = new Player(FAKE_LOOK, { x: 1, y: 1 }, 3)
+  it('lança o poder da mão, na direção em que está olhando, e respeita a recarga', () => {
+    const p = new Player(FAKE_LOOK, { x: 3, y: 1 }, 3)
     p.facing = 'left'
-    expect(p.attack()).toEqual({ x: 0, y: 1 })
-    expect(p.attack()).toBeNull()
+    const shot = p.shoot()
+    expect(shot?.direction).toBe('left')
+    expect(shot?.position.y).toBe(1)
+    // Sai um pouco à frente do corpo (da mão), não do centro do personagem
+    expect(shot?.position.x).toBeLessThan(3)
+    expect(shot?.position.x).toBeGreaterThan(2)
+    expect(p.shoot()).toBeNull()
 
     simulate(PLAYER_SETTINGS.attackCooldown + 0.01, (dt) => p.step(dt, fakeInput(), grid))
-    expect(p.attack()).not.toBeNull()
+    expect(p.shoot()).not.toBeNull()
   })
 
   it('perde vida, fica invulnerável e só volta a ser atingido depois', () => {
@@ -77,6 +82,6 @@ describe('Player', () => {
     p.hurt()
     expect(p.lives).toBe(0)
     expect(p.alive).toBe(false)
-    expect(p.attack()).toBeNull()
+    expect(p.shoot()).toBeNull()
   })
 })
